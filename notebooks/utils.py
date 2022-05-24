@@ -1,4 +1,5 @@
 
+from os import stat
 import pandas as pd
 from fuzzywuzzy import fuzz
 
@@ -6,32 +7,58 @@ from fuzzywuzzy import fuzz
 
 from geopy import distance
 
-ZURICH_HB_ID = '8503000'
+ZURICH_HB_ID = 8503000
 ZURICH_HB_LAT = 47.378176
 ZURICH_HB_LON = 8.540212
 
-ZURICH_WERD_ID = '8591427'
+ZURICH_WERD_ID = 8591427
 ZURICH_WERD_LAT = 47.372324
 ZURICH_WERD_LON = 8.526845
 
-ZURICH_HB_ID = '8503090'
+ZURICH_HB_ID = 8503090
 ZURICH_HB_LAT = 47.372239
 ZURICH_HB_LON = 8.531722
 
 #===============================================================
 
+# Max (As the Crows Flies") walking distances for transfers between two stops
+MAX_WALKING_DIST = 0.5
+
+# Meter's per second walking speed
+WALKING_SPEED_MPS = 50 / 60
+
+# Kilometer's per second walking speed (for consitency of units)
+WALKING_SPEED_KPS = WALKING_SPEED_MPS / 1000
+
 #---------------------------------------------------------------
-# Time math
+# Time
 
-def time_to_seconds(hour, minute=0, second=0):
-    return hour * 3600 + minute * 60 + second
+class Time:
+    def __init__(self, h=0, m=0, s=0) -> None:
+        self.h=h
+        self.m=m
+        self.s=s
 
-def seconds_to_time(seconds):
-    hour = seconds // 3600
-    temp = (seconds - hour*3600)
-    minute = temp // 60
-    second = (temp - minute*60)
-    return hour, minute, second
+    def in_seconds(self):
+        return self.h * 3600 + self.m * 60 + self.s
+
+    def __repr__(self) -> str:
+        return f"Time({self.h}:{self.m}:{self.s})"
+
+    def __add__(self, other):
+        return Time.from_seconds(self.in_seconds() + other.in_seconds())
+
+    def __sub__(self, other):
+        return Time.from_seconds(self.in_seconds() - other.in_seconds())
+
+    @staticmethod
+    def from_seconds(seconds):
+        h = seconds // 3600
+        temp = (seconds - h*3600)
+        m = temp // 60
+        s = (temp - m*60)
+
+        return Time(h, m, s)
 
 
 def reformat_time(time_str):
@@ -40,7 +67,7 @@ def reformat_time(time_str):
     hour = int(temp[0])
     minute = int(temp[1])
 
-    return time_to_seconds(hour, minute)
+    return Time(hour, minute).in_seconds()
 
 
 #---------------------------------------------------------------
@@ -57,8 +84,7 @@ def fuzzy_search_stops(df_stops, search_str):
 
 
 #---------------------------------------------------------------
-# Loading Dataframes
-
+# Data loading
 
 def load_df_stops():
     df_stops = pd.read_csv('../data/stops_15k.csv')
@@ -72,6 +98,9 @@ def load_df_connections():
 
     df_connections['dep_time_s'] = df_connections['dep_time'].map(reformat_time)
     df_connections['arr_time_s'] = df_connections['arr_time'].map(reformat_time)
+    # df_connections.drop(['dep_time', 'arr_time'],axis=1,inplace=True) # TODO maybe uncomment this?
+
+    df_connections['std'] = 66
 
     return df_connections
 
@@ -80,20 +109,29 @@ def load_df_connections():
 # Data manipulation
 
 
-def filter_by_hour_interval(df_connections, start_time_h, end_time_h):
-    return filter_by_seconds_interval(df_connections, time_to_seconds(start_time_h), time_to_seconds(end_time_h))
+def filter_by_time_interval(df_connections, start_time:Time, end_time:Time):
+    return filter_by_seconds_interval(df_connections, start_time.in_seconds(), end_time.in_seconds())
 
-
-def filter_by_seconds_interval(df_connections, start_time_s, end_time_s):
+def filter_by_seconds_interval(df_connections, start_time_s:int, end_time_s:int):
     return df_connections[(df_connections['dep_time_s'] > start_time_s) & (df_connections['arr_time_s'] < end_time_s)]
+
+
+def filter_stops_by_distance(df_stops, pos:tuple, dist_km):
+    df_stops['dist'] = df_stops.apply(lambda row:
+        geo_distance_km(pos, (row['latitude'], row['longitude'])),
+        axis=1)
+
+    return df_stops[df_stops['dist'] < dist_km]
 
 
 def filter_stops_by_distance_from_zurich_hb(df_stops, dist_km):
     df_dist = df_stops.apply(lambda row:
         geo_distance_km((ZURICH_HB_LAT, ZURICH_HB_LON), (row['latitude'], row['longitude'])),
         axis=1)
-
     return df_stops[df_dist < dist_km]
+
+    # return filter_stops_by_distance(df_stops, (ZURICH_HB_LAT, ZURICH_HB_LON), dist_km).drop('dist',axis=1)
+
 
 
 def filter_connections_by_stops(df_connections, df_stops):
