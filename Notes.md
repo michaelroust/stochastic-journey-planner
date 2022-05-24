@@ -8,12 +8,10 @@ pip install networkx
 
 ## Random
 
-Zurich HB
-8503000
-
-Zurich Werd
-8591427
-
+Throughout that algorithm part of the project.
+We rigourously stick to the following units:
+- Distance: meters
+- Time: seconds (except when using Time class)
 
 `df.stops.merge(df_connections, left_on='stop_id', right_on='dep_stop_id')`
 
