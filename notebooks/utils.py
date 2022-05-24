@@ -21,14 +21,11 @@ ZURICH_HB_LON = 8.531722
 
 #===============================================================
 
-# Max (As the Crows Flies") walking distances for transfers between two stops
-MAX_WALKING_DIST = 0.5
+# Max (As the Crows Flies") walking distances for transfers between two stops (meters)
+MAX_WALKING_DIST = 500
 
 # Meter's per second walking speed
 WALKING_SPEED_MPS = 50 / 60
-
-# Kilometer's per second walking speed (for consitency of units)
-WALKING_SPEED_KPS = WALKING_SPEED_MPS / 1000
 
 #---------------------------------------------------------------
 # Time
@@ -116,19 +113,19 @@ def filter_by_seconds_interval(df_connections, start_time_s:int, end_time_s:int)
     return df_connections[(df_connections['dep_time_s'] > start_time_s) & (df_connections['arr_time_s'] < end_time_s)]
 
 
-def filter_stops_by_distance(df_stops, pos:tuple, dist_km):
+def filter_stops_by_distance(df_stops, pos:tuple, dist_m):
     df_stops['dist'] = df_stops.apply(lambda row:
-        geo_distance_km(pos, (row['latitude'], row['longitude'])),
+        geo_distance(pos, (row['latitude'], row['longitude'])),
         axis=1)
 
-    return df_stops[df_stops['dist'] < dist_km]
+    return df_stops[df_stops['dist'] < dist_m]
 
 
-def filter_stops_by_distance_from_zurich_hb(df_stops, dist_km):
+def filter_stops_by_distance_from_zurich_hb(df_stops, dist_m):
     df_dist = df_stops.apply(lambda row:
-        geo_distance_km((ZURICH_HB_LAT, ZURICH_HB_LON), (row['latitude'], row['longitude'])),
+        geo_distance((ZURICH_HB_LAT, ZURICH_HB_LON), (row['latitude'], row['longitude'])),
         axis=1)
-    return df_stops[df_dist < dist_km]
+    return df_stops[df_dist < dist_m]
 
     # return filter_stops_by_distance(df_stops, (ZURICH_HB_LAT, ZURICH_HB_LON), dist_km).drop('dist',axis=1)
 
@@ -141,6 +138,6 @@ def filter_connections_by_stops(df_connections, df_stops):
 #---------------------------------------------------------------
 # Misc
 
-def geo_distance_km(a:tuple, b:tuple):
-    return distance.distance(a, b).km
+def geo_distance(a:tuple, b:tuple):
+    return distance.distance(a, b).m
 
