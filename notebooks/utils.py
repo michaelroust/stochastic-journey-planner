@@ -16,6 +16,8 @@ from geopy import distance
 PATH_STOPS_15K = '../data/stops_15k.csv'
 PATH_CONNECTIONS_8_10 = '../data/connections_8_10.csv'
 
+PATH_WALK_EDGES_15K = '../data/walks_15k.csv'
+
 PATH_STOPS_WALK_TIME_15K = '../data/stops_walk_time_15k.csv'
 
 #---------------------------------------------------------------
@@ -115,13 +117,19 @@ def load_df_stops_walk_time():
     df_stops_walk_time.set_index('stop_id',inplace=True)
     return df_stops_walk_time
 
+def load_df_walks():
+    df_walks = pd.read_csv(PATH_WALK_EDGES_15K)
+    df_walks.drop('Unnamed: 0',axis=1,inplace=True)
+    df_walks.sort_index(axis=1, inplace=True)
+    return df_walks
+
 def load_df_connections():
     df_connections = pd.read_csv(PATH_CONNECTIONS_8_10)
     df_connections.drop('Unnamed: 0',axis=1,inplace=True)
 
     df_connections['dep_time_s'] = df_connections['dep_time'].map(reformat_time)
     df_connections['arr_time_s'] = df_connections['arr_time'].map(reformat_time)
-    # df_connections.drop(['dep_time', 'arr_time'],axis=1,inplace=True) # TODO maybe uncomment this?
+    df_connections.drop(['dep_time', 'arr_time'],axis=1,inplace=True) # TODO maybe uncomment this?
 
     df_connections['std'] = 66
 
@@ -170,7 +178,10 @@ def filter_connections_by_stops(df_connections, df_stops):
 def stops_in_walking_distance(df_stops, stop_id, pos:tuple, max_dist=MAX_WALKING_DIST):
     """Filters out any stops not in walking distance. Returns a df_stops with added distance and walk_time columns."""
     ser_dist = filter_stops_by_distance(df_stops, stop_id, pos, max_dist)
-    return (ser_dist / WALKING_SPEED_MPS).astype(int)
+    ser_walk_time = (ser_dist / WALKING_SPEED_MPS).astype(int)
+    # ser_walk_time['dep_stop_id'] =
+
+    return ser_walk_time
     # return ser_dist.map(walking_time)
 
 
@@ -184,7 +195,25 @@ def filter_stops_by_distance(df_stops, stop_id, pos:tuple, max_dist):
     return ser_dist[mask].drop(index=stop_id)
 
 
-def build_walk_time_list(df_stops, stop_id, pos:tuple, prints=False):
+def walk_edge_list(df_stops, arr_stop_id, arr_pos:tuple):
+    ser_walk_time = stops_in_walking_distance(df_stops, arr_stop_id, arr_pos)
+    df_walk = ser_walk_time.to_frame()
+    df_walk.reset_index(inplace=True)
+    df_walk.rename({0:'weight', 'stop_id':'dep_stop_id'}, axis=1, inplace=True)
+    df_walk['arr_stop_id'] = arr_stop_id
+    return df_walk
+
+
+def walk_all_edge_list(df_stops):
+    temp = []
+    for index, row in df_stops.iterrows():
+        temp.append(walk_edge_list(df_stops, index, (row['latitude'], row['longitude'])))
+
+    return pd.concat(temp,ignore_index=True)
+
+
+# Deprecated
+def build_walk_time_adj_list(df_stops, stop_id, pos:tuple, prints=False):
     """Outputs a list of tuples of stop_ids and walking times from a given stop_id"""
     if prints: print(stop_id)
     ser_walk_time = stops_in_walking_distance(df_stops, stop_id, pos)
@@ -192,11 +221,12 @@ def build_walk_time_list(df_stops, stop_id, pos:tuple, prints=False):
 
     return list(zip(ser_walk_time.index.values, ser_walk_time.values))
 
-def build_walk_time_data(df_stops, prints=False):
+# Deprecated
+def build_walk_time_adj_data(df_stops, prints=False):
 
     ser_walk_time = df_stops.apply(
         lambda row:
-            build_walk_time_list(df_stops, row.name, (row['latitude'], row['longitude']), prints),
+            build_walk_time_adj_list(df_stops, row.name, (row['latitude'], row['longitude']), prints),
         axis=1)
 
     df_stops_with_walk_time = df_stops.copy()

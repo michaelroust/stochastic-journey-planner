@@ -19,6 +19,10 @@ We rigourously stick to the following units:
 - Distance: meters
 - Time: seconds (except when using Time class)
 
+
+If routing algo gives a path with multiple sequential walking nodes just drop a node or smth.
+
+
 `df.stops.merge(df_connections, left_on='stop_id', right_on='dep_stop_id')`
 
 
