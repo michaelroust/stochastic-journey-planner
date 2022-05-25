@@ -6,6 +6,12 @@ pip install geopy
 pip install networkx
 
 
+## File structure
+
+ - `algo.py`: Algorithm logic.
+ - `utils.py`: Generally useful functions for whole project.
+ - `run_walk_time_data.py`: Generate walk_time list for each stop.
+
 ## Random
 
 Throughout that algorithm part of the project.
