@@ -90,7 +90,7 @@ def fuzzy_search_stops(df_stops, search_str):
 def load_df_stops():
     df_stops = pd.read_csv('../data/stops_15k.csv')
     df_stops.drop('Unnamed: 0',axis=1,inplace=True)
-    # df_stops.set_index('stop_id',inplace=True)
+    df_stops.set_index('stop_id',inplace=True)
     return df_stops
 
 def load_df_connections():
@@ -139,31 +139,38 @@ def filter_connections_by_stops(df_connections, df_stops):
 
 #---------------------------------------------------------------
 
+
+
+
+
+#---------------------------------------------------------------
+
 # TODO figure out WTF did I do here
 
 def stops_in_walking_distance(df_stops, pos:tuple, dist=MAX_WALKING_DIST):
     """Filters out any stops not in walking distance. Returns a df_stops with added distance and walk_time columns."""
-    df_stops, df_dist = filter_stops_by_distance(df_stops, pos, dist)
-    df_walk_time = df_dist.map(walking_time)
-    return df_stops, df_walk_time
+    df_close_stops, ser_dist = filter_stops_by_distance(df_stops, pos, dist)
+    ser_walk_time = ser_dist.map(walking_time)
+    return df_close_stops, ser_walk_time
 
 
 def filter_stops_by_distance(df_stops, pos:tuple, dist):
     """Filters out any stops that aren't within dist (meters). Returns df_stops and df_distance."""
-    df_dist = df_stops.apply(lambda row:
+    ser_dist = df_stops.apply(lambda row:
         geo_distance(pos, (row['latitude'], row['longitude'])),
         axis=1)
 
-    return df_stops[df_dist < dist], df_dist[df_dist < dist]
+    mask = ser_dist < dist
+    return df_stops[mask], ser_dist[mask]
 
 
 def build_walking_dist_data(df_stops, pos:tuple):
     """Outputs a list of tuples of stop_ids and walking times from a given stop_id"""
-    _, walk_time_series = stops_in_walking_distance(df_stops, pos)
+    _, ser_walk_time = stops_in_walking_distance(df_stops, pos)
 
     # walk_time_series = walk_time_series.sort_values()   # TODO This line can be commented for efficiency
 
-    return list(zip(walk_time_series.index.values, walk_time_series.values))
+    return list(zip(ser_walk_time.index.values, ser_walk_time.values))
 
 # def build_walking_dist_data(df_stops):
 #     df_stops
@@ -178,4 +185,4 @@ def geo_distance(a:tuple, b:tuple):
     return distance.distance(a, b).m
 
 def walking_time(dist):
-    return dist / WALKING_SPEED_MPS
+    return round(dist / WALKING_SPEED_MPS)
