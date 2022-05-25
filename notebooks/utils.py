@@ -7,6 +7,20 @@ from fuzzywuzzy import fuzz
 
 from geopy import distance
 
+#===============================================================
+# Constants
+
+#---------------------------------------------------------------
+# Paths
+
+PATH_STOPS_15K = '../data/stops_15k.csv'
+PATH_CONNECTIONS_8_10 = '../data/connections_8_10.csv'
+
+PATH_STOPS_WALK_TIME_15K = '../data/stops_walk_time_15k.csv'
+
+#---------------------------------------------------------------
+# Numerical
+
 ZURICH_HB_ID = 8503000
 ZURICH_HB_LAT = 47.378176
 ZURICH_HB_LON = 8.540212
@@ -19,13 +33,16 @@ ZURICH_HB_ID = 8503090
 ZURICH_HB_LAT = 47.372239
 ZURICH_HB_LON = 8.531722
 
-#===============================================================
 
 # Max (As the Crows Flies") walking distances for transfers between two stops (meters)
 MAX_WALKING_DIST = 500
 
 # Meter's per second walking speed
 WALKING_SPEED_MPS = 50 / 60
+
+
+#===============================================================
+# Code
 
 #---------------------------------------------------------------
 # Time
@@ -88,13 +105,17 @@ def fuzzy_search_stops(df_stops, search_str):
 # TODO Methods may need modifications as data evolves.
 
 def load_df_stops():
-    df_stops = pd.read_csv('../data/stops_15k.csv')
+    df_stops = pd.read_csv(PATH_STOPS_15K)
     df_stops.drop('Unnamed: 0',axis=1,inplace=True)
     df_stops.set_index('stop_id',inplace=True)
     return df_stops
 
+def load_df_stops_walk_time():
+    df_stops_walk_time = pd.read_csv(PATH_STOPS_WALK_TIME_15K)
+    return df_stops_walk_time
+
 def load_df_connections():
-    df_connections = pd.read_csv('../data/connections_8_10.csv')
+    df_connections = pd.read_csv(PATH_CONNECTIONS_8_10)
     df_connections.drop('Unnamed: 0',axis=1,inplace=True)
 
     df_connections['dep_time_s'] = df_connections['dep_time'].map(reformat_time)
@@ -147,33 +168,37 @@ def filter_connections_by_stops(df_connections, df_stops):
 
 # TODO figure out WTF did I do here
 
-def stops_in_walking_distance(df_stops, pos:tuple, dist=MAX_WALKING_DIST):
+def stops_in_walking_distance(df_stops, stop_id, pos:tuple, dist=MAX_WALKING_DIST):
     """Filters out any stops not in walking distance. Returns a df_stops with added distance and walk_time columns."""
-    df_close_stops, ser_dist = filter_stops_by_distance(df_stops, pos, dist)
-    ser_walk_time = ser_dist.map(walking_time)
-    return df_close_stops, ser_walk_time
+    ser_dist = filter_stops_by_distance(df_stops, stop_id, pos, dist)
+    return ser_dist.map(walking_time)
 
 
-def filter_stops_by_distance(df_stops, pos:tuple, dist):
+def filter_stops_by_distance(df_stops, stop_id, pos:tuple, dist):
     """Filters out any stops that aren't within dist (meters). Returns df_stops and df_distance."""
     ser_dist = df_stops.apply(lambda row:
         geo_distance(pos, (row['latitude'], row['longitude'])),
         axis=1)
 
-    mask = ser_dist < dist
-    return df_stops[mask], ser_dist[mask]
+    mask = (ser_dist < dist)
+    return ser_dist[mask].drop(index=stop_id)
 
 
-def build_walking_dist_data(df_stops, pos:tuple):
+def build_walk_time_list(df_stops, stop_id, pos:tuple):
     """Outputs a list of tuples of stop_ids and walking times from a given stop_id"""
-    _, ser_walk_time = stops_in_walking_distance(df_stops, pos)
-
-    # walk_time_series = walk_time_series.sort_values()   # TODO This line can be commented for efficiency
+    print(stop_id)
+    ser_walk_time = stops_in_walking_distance(df_stops, stop_id, pos)
+    ser_walk_time = ser_walk_time.sort_values()   # TODO This line can be commented for efficiency
 
     return list(zip(ser_walk_time.index.values, ser_walk_time.values))
 
-# def build_walking_dist_data(df_stops):
-#     df_stops
+def build_walk_time_data(df_stops):
+
+    ser_walk_time = df_stops.apply(lambda row: build_walk_time_list(df_stops, row.name, (row['latitude'], row['longitude'])), axis=1)
+    df_stops_with_walk_time = df_stops.copy()
+    df_stops_with_walk_time['walk_time'] = ser_walk_time
+
+    return df_stops_with_walk_time
 
 
 #---------------------------------------------------------------
