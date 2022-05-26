@@ -28,6 +28,7 @@ df_conns = filter_connections_by_stops(load_df_connections(), df_stops)
 
 
 def get_connections_walk(dest_stop_id):
+    """Get walking connections from precomputed data."""
     return df_walks[df_walks['arr_stop_id'] == dest_stop_id].copy()
 
 
@@ -66,12 +67,15 @@ def get_connections_trans(df_conns, dest_stop_id, end_time_s, prev_trip_id, max_
 def get_connections(df_conns, dest_stop_id, end_time_s, prev_trip_id, max_wait_time=MAX_WAIT_TIME, keep_n_cheapest=KEEP_N_CHEAPEST):
     df_conns_trans = get_connections_trans(df_conns, dest_stop_id, end_time_s, prev_trip_id, max_wait_time, keep_n_cheapest)
 
-    # Don't give 2 consecutive walk connections
     if prev_trip_id == 'walk':
+        # Don't give 2 consecutive walk connections
         return df_conns_trans
     else:
+        # Get walk connections and walk trip_id.
         df_conns_walk = get_connections_walk(dest_stop_id)
         df_conns_walk['trip_id'] = 'walk'
+
+        # Walk connections have no distribution
         df_conns_walk['mean'] = 0
         df_conns_walk['std'] = 0
 
@@ -79,13 +83,15 @@ def get_connections(df_conns, dest_stop_id, end_time_s, prev_trip_id, max_wait_t
 
 
 def neighbors(df_conns, dest_stop_id, end_time_s, prev_trip_id):
+    """Function to get valid neighbours for constrained dijkstra."""
     df_conns = get_connections(df_conns, dest_stop_id, end_time_s, prev_trip_id)
 
     for _, conn in df_conns.iterrows():
 
-        # Read the departure time (for cost/distance calculation)
+        # Read the departure time (for cost/distance and probability calculation)
         dep_time_s = conn['dep_time_s']
 
+        # Calculate probabilty according to our chosen model.
         mean_arr_time = conn['arr_time_s'] + conn['mean']
         std_arr_time = conn['std']
         proba = norm.cdf(end_time_s, loc=mean_arr_time, scale=std_arr_time)
@@ -139,8 +145,6 @@ def build_route(prev_trip_id, prev, distances, probas, conn_datas, start_id, end
     return path, cum_proba, pd.concat(path_conn_datas, axis=1).T
 
 
-# end_id = ZURICH_HB_ID
-# end_time = Time(h=10).in_seconds()
 
 def probabilistic_constrained_dijkstra(df_conns, start_id, end_id, end_time, min_confidence=0.8, verbose=False):
 
