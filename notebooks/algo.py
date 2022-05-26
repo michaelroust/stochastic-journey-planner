@@ -106,63 +106,74 @@ def neighbors(df_conns, dest_stop_id, end_time_s, prev_trip_id):
 
 
 
-
 def build_route(prev_trip_id, prev, distances, probas, conn_datas, start_id, end_id):
+    """Build the path from start to end. We also populate a pandas dataframe
+    for conventiently accessing the route information."""
 
     if start_id not in prev.keys():
         return None
 
+    # Initalize parameters
     node = start_id
     trip_id = prev_trip_id[node]
     dist = distances[start_id]
-    cum_proba = 1
+    cum_proba = 1.0
 
     path = []
     path_conn_datas = []
     while node != end_id:
+        # Update outputs
         path.append((trip_id, node, dist))
         path_conn_datas.append(conn_datas[node])
+        cum_proba *= probas[node]
 
+        # Update next node, trip_id and distance
         node = prev[node]
         trip_id = prev_trip_id[node]
         dist = distances[node]
-        cum_proba *= probas[node]
 
+    # Update outputs 1 last time
     path.append((trip_id, node, dist))
     path_conn_datas.append(conn_datas[node])
+    cum_proba *= probas[node]
     return path, cum_proba, pd.concat(path_conn_datas, axis=1).T
 
 
 # end_id = ZURICH_HB_ID
 # end_time = Time(h=10).in_seconds()
 
-def dijkstra_base(df_conns, start_id, end_id, end_time, min_confidence=0.8, verbose=False):
+def probabilistic_constrained_dijkstra(df_conns, start_id, end_id, end_time, min_confidence=0.8, verbose=False):
 
     def build_route_proba(interm_id):
+        """Build the path to given intermediate_id. Used to obtain probabilty of following
+        this route until iterm_id. That probability is then used to only select edges
+        that are above our chosen confidence threshold."""
         if interm_id not in prev.keys():
-            return None, 1
+            return None, 1.0
 
+        # Initalize parameters
         node = interm_id
-        # trip_id = prev_trip_id[node]
         dist = distances[interm_id]
-        cum_proba = 1
+        cum_proba = 1.0
 
         path = []
-        # path_conn_datas = []
         while node != end_id:
-            path.append((trip_id, node, dist))
-            # path_conn_datas.append(conn_datas[node])
 
-            node = prev[node]
-            # trip_id = prev_trip_id[node]
-            dist = distances[node]
+            # Update outputs
+            path.append((node, dist))
             cum_proba *= probas[node]
 
+            # Update next node and distance
+            node = prev[node]
+            dist = distances[node]
+
+        # Update outputs 1 last time
         path.append((node, dist))
-        # path_conn_datas.append(conn_datas[node])
+        cum_proba *= probas[node]
         return path, cum_proba
 
 
+    # Initialize parameter and output collections
     distances = {}      # stores travel_times
     prev = {}           # stores predecessor
     prev_trip_id = {}   # stores prev_trip_id
@@ -172,6 +183,7 @@ def dijkstra_base(df_conns, start_id, end_id, end_time, min_confidence=0.8, verb
     visited = set()     # stores already visited stop_ids
     queue = PriorityQueue()
 
+    # Initialize dicts for destination node
     distances[end_id] = 0
     prev[end_id] = None
     prev_trip_id[end_id] = None
@@ -181,25 +193,37 @@ def dijkstra_base(df_conns, start_id, end_id, end_time, min_confidence=0.8, verb
     queue.put((distances[end_id], (end_id, end_time)))
 
     while not queue.empty():
+
+        # Get next node to traverse from queue.
         _, (curr_id, curr_time) = queue.get()
+
+        # Break if we have reached the start.
         if curr_id == start_id:
             break
 
+        # Update visited nodes.
         visited.add(curr_id)
 
+        # Retrive cumulated probabilty until curr_id node
         _, cum_proba = build_route_proba(curr_id)
 
+        # Loop to traverse edges connecting all valid neighbours.
         for trip_id, neighbor_id, neighbor_dep_time_s, proba, conn_data in neighbors(df_conns, curr_id, curr_time, prev_trip_id[curr_id]):
+
+            # Distance calculation that works for both walking and transportation times.
             new_dist = end_time - neighbor_dep_time_s
 
+            # If neighbor is a valid do relaxation.
             if (new_dist < distances.get(neighbor_id, inf)) and (cum_proba * proba > min_confidence):
 
+                # Update all collections.
                 distances[neighbor_id] = new_dist
                 prev[neighbor_id] = curr_id
                 prev_trip_id[neighbor_id] = trip_id
                 probas[neighbor_id] = proba
                 conn_datas[neighbor_id] = conn_data
 
+                # Update visited nodes if its a new node.
                 if neighbor_id not in visited:
                     visited.add(neighbor_id)
                     queue.put((distances[neighbor_id], (neighbor_id, neighbor_dep_time_s)))
@@ -226,7 +250,7 @@ def generate_routes(start_id, end_id, end_time:int, min_confidence=0.8, nroutes=
     while i < max_iter and len(routes_datas) < nroutes:
         # if verbose:
 
-        temp = dijkstra_base(df_conns_dynamic, start_id, end_id, end_time, min_confidence)
+        temp = probabilistic_constrained_dijkstra(df_conns_dynamic, start_id, end_id, end_time, min_confidence)
         if temp != None:
             _, cum_proba, path_conn_datas = temp
         else:
