@@ -9,7 +9,7 @@ from utils import *
 MAX_WAIT_TIME = Time(m=45).in_seconds()
 KEEP_N_CHEAPEST = 1
 
-STOPS_RADIUS = 2000
+STOPS_RADIUS = 15000
 
 
 
@@ -115,7 +115,7 @@ def build_route(prev_trip_id, prev, distances, conn_datas, start_id, end_id):
 # end_id = ZURICH_HB_ID
 # end_time = Time(h=10).in_seconds()
 
-def dijkstra_base(start_id, end_id, end_time):
+def dijkstra_base(start_id, end_id, end_time, print_progress=False):
 
     distances = {}      # stores travel_times
     prev = {}           # stores predecessor
@@ -137,6 +137,9 @@ def dijkstra_base(start_id, end_id, end_time):
     # TODO? Add thing to stop once we reach target?
     while not queue.empty():
         _, (curr_id, curr_time) = queue.get()
+        if curr_id == start_id:
+            break
+
         visited.add(curr_id)
         for trip_id, neighbor_id, neighbor_dep_time_s, conn_data in neighbors(curr_id, curr_time, prev_trip_id[curr_id]):
             new_dist = end_time - neighbor_dep_time_s
@@ -150,8 +153,10 @@ def dijkstra_base(start_id, end_id, end_time):
 
                 if neighbor_id not in visited:
                     visited.add(neighbor_id)
-                    # prev_dep_time
                     queue.put((distances[neighbor_id], (neighbor_id, neighbor_dep_time_s)))
+
+                    if print_progress:
+                        print(f'Visited {len(visited)}/{df_stops.shape[0]}')
 
     return build_route(prev_trip_id, prev, distances, conn_datas, start_id, end_id)
 
