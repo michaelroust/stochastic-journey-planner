@@ -10,7 +10,7 @@ from scipy.stats import norm
 MAX_WAIT_TIME = Time(m=45).in_seconds()
 KEEP_N_CHEAPEST = 1
 
-STOPS_RADIUS = 2000
+STOPS_RADIUS = 5000
 
 
 
