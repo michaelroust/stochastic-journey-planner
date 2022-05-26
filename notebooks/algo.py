@@ -110,7 +110,6 @@ def neighbors(df_conns, dest_stop_id, end_time_s, prev_trip_id):
 def build_route(prev_trip_id, prev, distances, probas, conn_datas, start_id, end_id):
 
     if start_id not in prev.keys():
-        print("NO ROUTE FOUND")
         return None
 
     node = start_id
@@ -194,7 +193,7 @@ def dijkstra_base(df_conns, start_id, end_id, end_time, min_confidence=0.8, verb
         for trip_id, neighbor_id, neighbor_dep_time_s, proba, conn_data in neighbors(df_conns, curr_id, curr_time, prev_trip_id[curr_id]):
             new_dist = end_time - neighbor_dep_time_s
             # new_dist = distances[curr_id] + neighbor_weight
-            if new_dist < distances.get(neighbor_id, inf) and (cum_proba * proba > min_confidence):
+            if (new_dist < distances.get(neighbor_id, inf)) and (cum_proba * proba > min_confidence):
 
                 distances[neighbor_id] = new_dist
                 prev[neighbor_id] = curr_id
@@ -224,11 +223,17 @@ def generate_routes(start_id, end_id, end_time:int, min_confidence=0.8, nroutes=
     # removed_edges = set()
 
     print("Starting routing")
-    i = 1
-    while i <= max_iter and len(routes_datas) < nroutes:
+    i = 0
+    while i < max_iter and len(routes_datas) < nroutes:
         # if verbose:
 
-        _, cum_proba, path_conn_datas = dijkstra_base(df_conns_dynamic, start_id, end_id, end_time, min_confidence)
+        temp = dijkstra_base(df_conns_dynamic, start_id, end_id, end_time, min_confidence)
+        if temp != None:
+            _, cum_proba, path_conn_datas = temp
+        else:
+            if verbose: print("NO MORE ROUTES FOUND")
+            break
+        # if cum_proba > min_confidence:
         routes_datas.append(path_conn_datas)
 
         # Drop connection with lowest probability of making it
