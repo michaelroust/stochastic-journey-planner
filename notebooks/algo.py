@@ -239,7 +239,6 @@ def probabilistic_constrained_dijkstra(df_conns, start_id, end_id, end_time, min
 def generate_routes(start_id, end_id, end_time:int, min_confidence=0.8, nroutes=5, max_iter=10, verbose=False):
     """Build N routes that go from A to B and arrive by tgt_arrival_time_s with tgt_confidence%"""
 
-    # routes_list = []
     routes_datas = []
 
     df_conns_dynamic = df_conns.copy()
@@ -248,7 +247,6 @@ def generate_routes(start_id, end_id, end_time:int, min_confidence=0.8, nroutes=
     print("Starting routing")
     i = 0
     while i < max_iter and len(routes_datas) < nroutes:
-        # if verbose:
 
         temp = probabilistic_constrained_dijkstra(df_conns_dynamic, start_id, end_id, end_time, min_confidence)
         if temp != None:
