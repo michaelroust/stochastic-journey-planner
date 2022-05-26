@@ -1,9 +1,10 @@
 
+from IPython.display import display
 from queue import PriorityQueue
 from math import inf
 from utils import *
 from scipy.stats import norm
-
+import sys
 
 #===============================================================
 
@@ -30,7 +31,7 @@ def get_connections_walk(dest_stop_id):
     return df_walks[df_walks['arr_stop_id'] == dest_stop_id].copy()
 
 
-def get_connections_trans(dest_stop_id, end_time_s, prev_trip_id, max_wait_time=MAX_WAIT_TIME, keep_n_cheapest=KEEP_N_CHEAPEST):
+def get_connections_trans(df_conns, dest_stop_id, end_time_s, prev_trip_id, max_wait_time=MAX_WAIT_TIME, keep_n_cheapest=KEEP_N_CHEAPEST):
     arrive_to_same_stop = df_conns['arr_stop_id'] == dest_stop_id
     arrive_after_start = df_conns['arr_time_s'] >= (end_time_s - max_wait_time)
 
@@ -62,8 +63,8 @@ def get_connections_trans(dest_stop_id, end_time_s, prev_trip_id, max_wait_time=
     return df_edges
 
 
-def get_connections(dest_stop_id, end_time_s, prev_trip_id, max_wait_time=MAX_WAIT_TIME, keep_n_cheapest=KEEP_N_CHEAPEST):
-    df_conns_trans = get_connections_trans(dest_stop_id, end_time_s, prev_trip_id, max_wait_time, keep_n_cheapest)
+def get_connections(df_conns, dest_stop_id, end_time_s, prev_trip_id, max_wait_time=MAX_WAIT_TIME, keep_n_cheapest=KEEP_N_CHEAPEST):
+    df_conns_trans = get_connections_trans(df_conns, dest_stop_id, end_time_s, prev_trip_id, max_wait_time, keep_n_cheapest)
 
     # Don't give 2 consecutive walk connections
     if prev_trip_id == 'walk':
@@ -77,8 +78,8 @@ def get_connections(dest_stop_id, end_time_s, prev_trip_id, max_wait_time=MAX_WA
         return pd.concat([df_conns_trans, df_conns_walk], ignore_index=True)
 
 
-def neighbors(dest_stop_id, end_time_s, prev_trip_id):
-    df_conns = get_connections(dest_stop_id, end_time_s, prev_trip_id)
+def neighbors(df_conns, dest_stop_id, end_time_s, prev_trip_id):
+    df_conns = get_connections(df_conns, dest_stop_id, end_time_s, prev_trip_id)
 
     for _, conn in df_conns.iterrows():
 
@@ -102,9 +103,14 @@ def neighbors(dest_stop_id, end_time_s, prev_trip_id):
 
 #===============================================================
 
+
+
+
+
 def build_route(prev_trip_id, prev, distances, probas, conn_datas, start_id, end_id):
 
     if start_id not in prev.keys():
+        print("NO ROUTE FOUND")
         return None
 
     node = start_id
@@ -131,7 +137,32 @@ def build_route(prev_trip_id, prev, distances, probas, conn_datas, start_id, end
 # end_id = ZURICH_HB_ID
 # end_time = Time(h=10).in_seconds()
 
-def dijkstra_base(start_id, end_id, end_time, print_progress=False):
+def dijkstra_base(df_conns, start_id, end_id, end_time, min_confidence=0.8, verbose=False):
+
+    def build_route_proba(interm_id):
+        if interm_id not in prev.keys():
+            return None, 1
+
+        node = interm_id
+        # trip_id = prev_trip_id[node]
+        dist = distances[interm_id]
+        cum_proba = 1
+
+        path = []
+        # path_conn_datas = []
+        while node != end_id:
+            path.append((trip_id, node, dist))
+            # path_conn_datas.append(conn_datas[node])
+
+            node = prev[node]
+            # trip_id = prev_trip_id[node]
+            dist = distances[node]
+            cum_proba *= probas[node]
+
+        path.append((node, dist))
+        # path_conn_datas.append(conn_datas[node])
+        return path, cum_proba
+
 
     distances = {}      # stores travel_times
     prev = {}           # stores predecessor
@@ -157,10 +188,13 @@ def dijkstra_base(start_id, end_id, end_time, print_progress=False):
             break
 
         visited.add(curr_id)
-        for trip_id, neighbor_id, neighbor_dep_time_s, proba, conn_data in neighbors(curr_id, curr_time, prev_trip_id[curr_id]):
+
+        _, cum_proba = build_route_proba(curr_id)
+
+        for trip_id, neighbor_id, neighbor_dep_time_s, proba, conn_data in neighbors(df_conns, curr_id, curr_time, prev_trip_id[curr_id]):
             new_dist = end_time - neighbor_dep_time_s
             # new_dist = distances[curr_id] + neighbor_weight
-            if new_dist < distances.get(neighbor_id, inf):
+            if new_dist < distances.get(neighbor_id, inf) and (cum_proba * proba > min_confidence):
 
                 distances[neighbor_id] = new_dist
                 prev[neighbor_id] = curr_id
@@ -172,7 +206,7 @@ def dijkstra_base(start_id, end_id, end_time, print_progress=False):
                     visited.add(neighbor_id)
                     queue.put((distances[neighbor_id], (neighbor_id, neighbor_dep_time_s)))
 
-                    if print_progress:
+                    if verbose:
                         print(f'Visited {len(visited)}/{df_stops.shape[0]}')
 
     return build_route(prev_trip_id, prev, distances, probas, conn_datas, start_id, end_id)
@@ -180,7 +214,34 @@ def dijkstra_base(start_id, end_id, end_time, print_progress=False):
 
 #===============================================================
 
-def build_routes(start_stop_id, dest_stop_id, tgt_arrival_time_s:int, tgt_confidence):
+def generate_routes(start_id, end_id, end_time:int, min_confidence=0.8, nroutes=5, max_iter=10, verbose=False):
     """Build N routes that go from A to B and arrive by tgt_arrival_time_s with tgt_confidence%"""
-    pass
 
+    # routes_list = []
+    routes_datas = []
+
+    df_conns_dynamic = df_conns.copy()
+    # removed_edges = set()
+
+    print("Starting routing")
+    i = 1
+    while i <= max_iter and len(routes_datas) < nroutes:
+        # if verbose:
+
+        _, cum_proba, path_conn_datas = dijkstra_base(df_conns_dynamic, start_id, end_id, end_time, min_confidence)
+        routes_datas.append(path_conn_datas)
+
+        # Drop connection with lowest probability of making it
+        lowest_proba_conn = path_conn_datas.sort_values(by='proba', axis=0).index[0]
+        df_conns_dynamic.drop(lowest_proba_conn, inplace=True)
+
+        i += 1
+        if verbose:
+            print(f"Iteration: {i} - Found routes: {len(routes_datas)}")
+            print(f"Probability: {cum_proba}")
+            display(path_conn_datas)
+            print('---------------------------------------------')
+            # sys.stdout.flush()
+
+
+    return routes_datas

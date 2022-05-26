@@ -6,6 +6,8 @@
  - Add edge dropping logic
  - Add stochastic logic
 
+Dijkstra edge selection taking probability into account.
+
 
 ### Stuff to install
 
