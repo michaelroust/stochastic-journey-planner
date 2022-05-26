@@ -2,6 +2,7 @@
 from queue import PriorityQueue
 from math import inf
 from utils import *
+from scipy.stats import norm
 
 
 #===============================================================
@@ -9,7 +10,7 @@ from utils import *
 MAX_WAIT_TIME = Time(m=45).in_seconds()
 KEEP_N_CHEAPEST = 1
 
-STOPS_RADIUS = 15000
+STOPS_RADIUS = 2000
 
 
 
@@ -79,31 +80,38 @@ def get_connections(dest_stop_id, end_time_s, prev_trip_id, max_wait_time=MAX_WA
 def neighbors(dest_stop_id, end_time_s, prev_trip_id):
     df_conns = get_connections(dest_stop_id, end_time_s, prev_trip_id)
 
-    # TODO adapt returned values as needed
     for _, conn in df_conns.iterrows():
 
         # Read the departure time (for cost/distance calculation)
         dep_time_s = conn['dep_time_s']
+
+        mean_arr_time = conn['arr_time_s'] + conn['mean']
+        std_arr_time = conn['std']
+        proba = norm.cdf(end_time_s, loc=mean_arr_time, scale=std_arr_time)
 
         # If departure time is null this is a walking edge then we calculate the
         # 'departure' time according to the next departure time.
         if pd.isnull(dep_time_s):
             dep_time_s = end_time_s - conn['weight']
 
-        yield conn['trip_id'], conn['dep_stop_id'], dep_time_s, conn
+            proba = 1
+
+        conn['proba'] = proba
+        yield conn['trip_id'], conn['dep_stop_id'], dep_time_s, proba, conn
 
 
 #===============================================================
 
-def build_route(prev_trip_id, prev, distances, conn_datas, start_id, end_id):
+def build_route(prev_trip_id, prev, distances, probas, conn_datas, start_id, end_id):
 
     if start_id not in prev.keys():
         return None
 
     node = start_id
-    # prev_id = prev[start_id]
     trip_id = prev_trip_id[node]
     dist = distances[start_id]
+    cum_proba = 1
+
     path = []
     path_conn_datas = []
     while node != end_id:
@@ -113,10 +121,11 @@ def build_route(prev_trip_id, prev, distances, conn_datas, start_id, end_id):
         node = prev[node]
         trip_id = prev_trip_id[node]
         dist = distances[node]
-    # route.append(node,dist)
+        cum_proba *= probas[node]
+
     path.append((trip_id, node, dist))
     path_conn_datas.append(conn_datas[node])
-    return path, pd.concat(path_conn_datas, axis=1).T
+    return path, cum_proba, pd.concat(path_conn_datas, axis=1).T
 
 
 # end_id = ZURICH_HB_ID
@@ -127,7 +136,7 @@ def dijkstra_base(start_id, end_id, end_time, print_progress=False):
     distances = {}      # stores travel_times
     prev = {}           # stores predecessor
     prev_trip_id = {}   # stores prev_trip_id
-    # prev_travel_times = {}
+    probas = {}
     conn_datas = {}     # TODO we can replace this with only needed data
 
     visited = set()     # stores already visited stop_ids
@@ -136,6 +145,7 @@ def dijkstra_base(start_id, end_id, end_time, print_progress=False):
     distances[end_id] = 0
     prev[end_id] = None
     prev_trip_id[end_id] = None
+    probas[end_id] = 1
     conn_datas[end_id] = None
     # prev_travel_times[end_id] = 0
 
@@ -147,7 +157,7 @@ def dijkstra_base(start_id, end_id, end_time, print_progress=False):
             break
 
         visited.add(curr_id)
-        for trip_id, neighbor_id, neighbor_dep_time_s, conn_data in neighbors(curr_id, curr_time, prev_trip_id[curr_id]):
+        for trip_id, neighbor_id, neighbor_dep_time_s, proba, conn_data in neighbors(curr_id, curr_time, prev_trip_id[curr_id]):
             new_dist = end_time - neighbor_dep_time_s
             # new_dist = distances[curr_id] + neighbor_weight
             if new_dist < distances.get(neighbor_id, inf):
@@ -155,6 +165,7 @@ def dijkstra_base(start_id, end_id, end_time, print_progress=False):
                 distances[neighbor_id] = new_dist
                 prev[neighbor_id] = curr_id
                 prev_trip_id[neighbor_id] = trip_id
+                probas[neighbor_id] = proba
                 conn_datas[neighbor_id] = conn_data
 
                 if neighbor_id not in visited:
@@ -164,7 +175,7 @@ def dijkstra_base(start_id, end_id, end_time, print_progress=False):
                     if print_progress:
                         print(f'Visited {len(visited)}/{df_stops.shape[0]}')
 
-    return build_route(prev_trip_id, prev, distances, conn_datas, start_id, end_id)
+    return build_route(prev_trip_id, prev, distances, probas, conn_datas, start_id, end_id)
 
 
 #===============================================================
