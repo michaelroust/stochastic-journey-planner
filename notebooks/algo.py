@@ -95,7 +95,7 @@ def neighbors(df_conns, dest_stop_id, end_time_s, prev_trip_id):
         if pd.isnull(dep_time_s):
             dep_time_s = end_time_s - conn['weight']
 
-            proba = 1
+            proba = 1.0
 
         conn['proba'] = proba
         yield conn['trip_id'], conn['dep_stop_id'], dep_time_s, proba, conn
