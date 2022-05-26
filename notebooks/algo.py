@@ -81,10 +81,17 @@ def neighbors(dest_stop_id, end_time_s, prev_trip_id):
 
     # TODO adapt returned values as needed
     for _, conn in df_conns.iterrows():
+
+        # Read the departure time (for cost/distance calculation)
         dep_time_s = conn['dep_time_s']
+
+        # If departure time is null this is a walking edge then we calculate the
+        # 'departure' time according to the next departure time.
         if pd.isnull(dep_time_s):
             dep_time_s = end_time_s - conn['weight']
+
         yield conn['trip_id'], conn['dep_stop_id'], dep_time_s, conn
+
 
 #===============================================================
 
