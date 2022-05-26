@@ -177,7 +177,6 @@ def dijkstra_base(df_conns, start_id, end_id, end_time, min_confidence=0.8, verb
     prev_trip_id[end_id] = None
     probas[end_id] = 1
     conn_datas[end_id] = None
-    # prev_travel_times[end_id] = 0
 
     queue.put((distances[end_id], (end_id, end_time)))
 
@@ -192,7 +191,7 @@ def dijkstra_base(df_conns, start_id, end_id, end_time, min_confidence=0.8, verb
 
         for trip_id, neighbor_id, neighbor_dep_time_s, proba, conn_data in neighbors(df_conns, curr_id, curr_time, prev_trip_id[curr_id]):
             new_dist = end_time - neighbor_dep_time_s
-            # new_dist = distances[curr_id] + neighbor_weight
+
             if (new_dist < distances.get(neighbor_id, inf)) and (cum_proba * proba > min_confidence):
 
                 distances[neighbor_id] = new_dist
