@@ -79,7 +79,10 @@ def neighbors(dest_stop_id, end_time_s, prev_trip_id):
 
     # TODO adapt returned values as needed
     for _, conn in df_conns.iterrows():
-        yield conn['trip_id'], conn['dep_stop_id'], conn['weight']
+        dep_time_s = conn['dep_time_s']
+        if pd.isnull(dep_time_s):
+            dep_time_s = end_time_s - conn['weight']
+        yield conn['trip_id'], conn['dep_stop_id'], dep_time_s
 
 
 #===============================================================
