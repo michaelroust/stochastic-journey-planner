@@ -141,7 +141,6 @@ def dijkstra_base(start_id, end_id, end_time, print_progress=False):
 
     queue.put((distances[end_id], (end_id, end_time)))
 
-    # TODO? Add thing to stop once we reach target?
     while not queue.empty():
         _, (curr_id, curr_time) = queue.get()
         if curr_id == start_id:
