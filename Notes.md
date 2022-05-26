@@ -1,3 +1,12 @@
+
+### TODO
+
+ - Add desired data into dijkstra algo
+ - Print path
+ - Add edge dropping logic
+ - Add stochastic logic
+
+
 ### Stuff to install
 
 pip install fuzzywuzzy
