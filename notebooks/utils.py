@@ -42,6 +42,7 @@ MAX_WALKING_DIST = 500
 # Meter's per second walking speed
 WALKING_SPEED_MPS = 50 / 60
 
+BASE_TRANSFER_TIME = 120
 
 #===============================================================
 # Code
@@ -57,7 +58,7 @@ class Time:
         self.m=m
         self.s=s
 
-    def in_seconds(self):
+    def in_seconds(self) -> int:
         return self.h * 3600 + self.m * 60 + self.s
 
     def __repr__(self) -> str:
@@ -178,7 +179,7 @@ def filter_connections_by_stops(df_connections, df_stops):
 def stops_in_walking_distance(df_stops, stop_id, pos:tuple, max_dist=MAX_WALKING_DIST):
     """Filters out any stops not in walking distance. Returns a df_stops with added distance and walk_time columns."""
     ser_dist = filter_stops_by_distance(df_stops, stop_id, pos, max_dist)
-    ser_walk_time = (ser_dist / WALKING_SPEED_MPS).astype(int)
+    ser_walk_time = (ser_dist / WALKING_SPEED_MPS + BASE_TRANSFER_TIME).astype(int)
     # ser_walk_time['dep_stop_id'] =
 
     return ser_walk_time
