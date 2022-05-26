@@ -1,4 +1,6 @@
 
+from queue import PriorityQueue
+from math import inf
 from utils import *
 
 
@@ -82,7 +84,76 @@ def neighbors(dest_stop_id, end_time_s, prev_trip_id):
         dep_time_s = conn['dep_time_s']
         if pd.isnull(dep_time_s):
             dep_time_s = end_time_s - conn['weight']
-        yield conn['trip_id'], conn['dep_stop_id'], dep_time_s
+        yield conn['trip_id'], conn['dep_stop_id'], dep_time_s, conn
+
+#===============================================================
+
+def build_route(prev_trip_id, prev, distances, conn_datas, start_id, end_id):
+
+    if start_id not in prev.keys():
+        return None
+
+    node = start_id
+    # prev_id = prev[start_id]
+    trip_id = prev_trip_id[node]
+    dist = distances[start_id]
+    path = []
+    path_conn_datas = []
+    while node != end_id:
+        path.append((trip_id, node, dist))
+        path_conn_datas.append(conn_datas[node])
+
+        node = prev[node]
+        trip_id = prev_trip_id[node]
+        dist = distances[node]
+    # route.append(node,dist)
+    path.append((trip_id, node, dist))
+    path_conn_datas.append(conn_datas[node])
+    return path, pd.concat(path_conn_datas, axis=1).T
+
+
+# end_id = ZURICH_HB_ID
+# end_time = Time(h=10).in_seconds()
+
+def dijkstra_base(start_id, end_id, end_time):
+
+    distances = {}      # stores travel_times
+    prev = {}           # stores predecessor
+    prev_trip_id = {}   # stores prev_trip_id
+    # prev_travel_times = {}
+    conn_datas = {}     # TODO we can replace this with only needed data
+
+    visited = set()     # stores already visited stop_ids
+    queue = PriorityQueue()
+
+    distances[end_id] = 0
+    prev[end_id] = None
+    prev_trip_id[end_id] = None
+    conn_datas[end_id] = None
+    # prev_travel_times[end_id] = 0
+
+    queue.put((distances[end_id], (end_id, end_time)))
+
+    # TODO? Add thing to stop once we reach target?
+    while not queue.empty():
+        _, (curr_id, curr_time) = queue.get()
+        visited.add(curr_id)
+        for trip_id, neighbor_id, neighbor_dep_time_s, conn_data in neighbors(curr_id, curr_time, prev_trip_id[curr_id]):
+            new_dist = end_time - neighbor_dep_time_s
+            # new_dist = distances[curr_id] + neighbor_weight
+            if new_dist < distances.get(neighbor_id, inf):
+
+                distances[neighbor_id] = new_dist
+                prev[neighbor_id] = curr_id
+                prev_trip_id[neighbor_id] = trip_id
+                conn_datas[neighbor_id] = conn_data
+
+                if neighbor_id not in visited:
+                    visited.add(neighbor_id)
+                    # prev_dep_time
+                    queue.put((distances[neighbor_id], (neighbor_id, neighbor_dep_time_s)))
+
+    return build_route(prev_trip_id, prev, distances, conn_datas, start_id, end_id)
 
 
 #===============================================================
