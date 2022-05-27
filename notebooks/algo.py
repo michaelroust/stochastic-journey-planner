@@ -78,7 +78,7 @@ def get_connections(df_conns, dest_stop_id, end_time_s, prev_trip_id, max_wait_t
         df_conns_walk['mean'] = 0
         df_conns_walk['std'] = 0
 
-        return pd.concat([df_conns_trans, df_conns_walk], ignore_index=True)
+        return pd.concat([df_conns_trans, df_conns_walk], ignore_index=False)
 
 
 def neighbors(df_conns, dest_stop_id, end_time_s, prev_trip_id):
@@ -239,12 +239,14 @@ def probabilistic_constrained_dijkstra(df_conns, start_id, end_id, end_time, min
 
 #===============================================================
 
-def generate_routes(start_id, end_id, end_time:int, min_confidence=0.8, nroutes=5, max_iter=10, verbose=False):
-    """Build N routes that go from A to B and arrive by tgt_arrival_time_s with tgt_confidence%"""
+def generate_routes(start_id, end_id, end_time:int, day_of_week:int, min_confidence=0.8, nroutes=5, max_iter=10, verbose=False):
+    """Build N routes that go from A to B and arrive by tgt_arrival_time_s with tgt_confidence%.
+
+    :param int day_of_week: int value between 1 and 7. (1=Monday, 2=Tuesday...)"""
 
     routes_datas = []
 
-    df_conns_dynamic = df_conns.copy()
+    df_conns_dynamic = df_conns[df_conns['dayofweek'] == day_of_week].drop('dayofweek', axis=1).copy()
     # removed_edges = set()
 
     print("Starting routing")
@@ -261,7 +263,8 @@ def generate_routes(start_id, end_id, end_time:int, min_confidence=0.8, nroutes=
         routes_datas.append(path_conn_datas)
 
         # Drop connection with lowest probability of making it
-        lowest_proba_conn = path_conn_datas.sort_values(by='proba', axis=0).index[0]
+        path_conn_datas_transport = path_conn_datas[path_conn_datas['trip_id'] != 'walk']
+        lowest_proba_conn = path_conn_datas_transport.sort_values(by='proba', axis=0).index[0]
         df_conns_dynamic.drop(lowest_proba_conn, inplace=True)
 
         i += 1

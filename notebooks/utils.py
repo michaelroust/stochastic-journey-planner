@@ -16,6 +16,8 @@ from geopy import distance
 PATH_STOPS_15K = '../data/stops_15k.csv'
 PATH_CONNECTIONS_8_10 = '../data/connections_8_10.csv'
 
+PATH_CONNECTIONS = '../data/connections3.csv'
+
 PATH_WALK_EDGES_15K = '../data/walks_15k.csv'
 
 PATH_STOPS_WALK_TIME_15K = '../data/stops_walk_time_15k.csv'
@@ -129,7 +131,8 @@ def load_df_walks():
     return df_walks
 
 def load_df_connections():
-    df_connections = pd.read_csv(PATH_CONNECTIONS_8_10)
+    # df_connections = pd.read_csv(PATH_CONNECTIONS_8_10)
+    df_connections = pd.read_csv(PATH_CONNECTIONS)
     df_connections.drop('Unnamed: 0',axis=1,inplace=True)
 
     df_connections['dep_time_s'] = df_connections['dep_time'].map(reformat_time)
