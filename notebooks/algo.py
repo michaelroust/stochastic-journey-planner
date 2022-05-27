@@ -4,7 +4,6 @@ from queue import PriorityQueue
 from math import inf
 from utils import *
 from scipy.stats import norm
-import sys
 
 #===============================================================
 
