@@ -14,9 +14,10 @@ from geopy import distance
 # Paths
 
 PATH_STOPS_15K = '../data/stops_15k.csv'
-PATH_CONNECTIONS_8_10 = '../data/connections_8_10.csv'
 
-PATH_CONNECTIONS = '../data/connections3.csv'
+# PATH_CONNECTIONS = '../data/connections_8_10.csv'
+# PATH_CONNECTIONS = '../data/connections3.csv'
+PATH_CONNECTIONS = '../data/full_timetable.csv'
 
 PATH_WALK_EDGES_15K = '../data/walks_15k.csv'
 
@@ -134,12 +135,14 @@ def load_df_connections():
     # df_connections = pd.read_csv(PATH_CONNECTIONS_8_10)
     df_connections = pd.read_csv(PATH_CONNECTIONS)
     df_connections.drop('Unnamed: 0',axis=1,inplace=True)
+    df_connections.drop('time_period',axis=1, inplace=True)
+    df_connections.rename({'delay_mean':'mean', 'delay_std':'std'},axis=1, inplace=True)
 
     df_connections['dep_time_s'] = df_connections['dep_time'].map(reformat_time)
     df_connections['arr_time_s'] = df_connections['arr_time'].map(reformat_time)
     df_connections.drop(['dep_time', 'arr_time'],axis=1,inplace=True) # TODO maybe uncomment this?
 
-    df_connections['std'] = 66
+    # df_connections['std'] = 66
 
     return df_connections
 
