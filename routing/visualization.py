@@ -4,7 +4,6 @@ pd.set_option("display.max_rows",40)
 import matplotlib.pyplot as plt
 
 from utils import *
-from algo import *
 
 import plotly.express as px
 import plotly.graph_objects as go
@@ -30,7 +29,7 @@ def visualize_itinerary(df_connections, df_stops,START_ID,END_ID):
 
 
     df_stops['color'] = df_stops['color'].astype(str)
-    fig = px.scatter_mapbox(df_stops, hover_name="stop_name", lat="latitude", lon="longitude", color='color', zoom=13, opacity = 1)
+    fig = px.scatter_mapbox(df_stops, hover_name="stop_name", lat="latitude", lon="longitude", color='color', zoom=10, opacity = 1)
     lats = []
     lons = []
     for _, row in df_connections.iterrows():
@@ -90,7 +89,7 @@ def print_directions(result_from_algo, end_stop_name):
             dep_sec = datetime(2019, 1, 1, int(dep_sec.h), int(dep_sec.m), int(dep_sec.s)).strftime('%H:%M')
             arr_sec = datetime(2019, 1, 1, int(arr_sec.h), int(arr_sec.m), int(arr_sec.s)).strftime('%H:%M')
         else:
-            walk_minutes = Time.from_seconds(result.iloc[row]['weight']).m
+            walk_minutes = round(Time.from_seconds(result.iloc[row]['weight']).m)
 
             result.iloc[row]['dep_stop_name'] = ""
             result.iloc[row]['arr_stop_name'] = ""
@@ -115,7 +114,7 @@ def print_directions(result_from_algo, end_stop_name):
 
 
 # preprocess
-def preprocess(df):
+def preprocess(df, df_stops):
     final_df_dep = df.merge(df_stops, left_on ='dep_stop_id', right_on=df_stops.index)
     final_df_dep.rename(columns = {'stop_name':'dep_name'}, inplace=True)
     final_df_arr = final_df_dep.merge(df_stops,left_on='arr_stop_id', right_on='stop_id')
