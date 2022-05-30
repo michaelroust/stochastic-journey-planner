@@ -1,7 +1,7 @@
 
 from os import stat
 import pandas as pd
-from fuzzywuzzy import fuzz
+# from fuzzywuzzy import fuzz
 
 import bz2
 # import pickle
@@ -100,14 +100,14 @@ def reformat_time(time_str):
 #---------------------------------------------------------------
 # Search functions - for conveniently searching the stops DataFrame
 
-def fuzzy_search_best_stop(df_stops, search_str):
-    return fuzzy_search_stops(df_stops, search_str).iloc[0]['stop_id']
+# def fuzzy_search_best_stop(df_stops, search_str):
+#     return fuzzy_search_stops(df_stops, search_str).iloc[0]['stop_id']
 
-def fuzzy_search_stops(df_stops, search_str):
-    df_stops_search = df_stops.copy()
-    df_stops_search['ratio'] = df_stops['stop_name'].map(lambda stop_name: fuzz.ratio(search_str, stop_name))
-    df_stops_search.sort_values(by='ratio', ascending=False, inplace=True)
-    return df_stops_search
+# def fuzzy_search_stops(df_stops, search_str):
+#     df_stops_search = df_stops.copy()
+#     df_stops_search['ratio'] = df_stops['stop_name'].map(lambda stop_name: fuzz.ratio(search_str, stop_name))
+#     df_stops_search.sort_values(by='ratio', ascending=False, inplace=True)
+#     return df_stops_search
 
 
 #---------------------------------------------------------------
