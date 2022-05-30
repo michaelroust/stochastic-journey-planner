@@ -341,7 +341,7 @@ def generate_routes(start_id, end_id, end_time:int, day_of_week:int, min_confide
     return routes_datas
 
 
-def generate_routes_gen(start_id, end_id, end_time:int, day_of_week:int, min_confidence=0.8, nroutes=3, max_iter=10, verbose=False):
+def generate_routes_gen(start_id, end_id, end_time:int, day_of_week:int, min_confidence=0.8, nroutes=3, max_iter=10, fast=True, verbose=False):
     """Build N routes that go from A to B and arrive by tgt_arrival_time_s with tgt_confidence%.
 
     :param int day_of_week: int value between 1 and 7. (1=Monday, 2=Tuesday...)"""
@@ -356,7 +356,7 @@ def generate_routes_gen(start_id, end_id, end_time:int, day_of_week:int, min_con
     while i < max_iter and len(routes_datas) < nroutes:
 
         # temp = probabilistic_constrained_dijkstra(df_conns_dynamic, start_id, end_id, end_time, min_confidence)
-        temp = probabilistic_constrained_dijkstra_multigraph(df_conns_dynamic, start_id, end_id, end_time, min_confidence)
+        temp = probabilistic_constrained_dijkstra_multigraph(df_conns_dynamic, start_id, end_id, end_time, min_confidence, fast=fast)
         if temp != None:
             path, cum_proba, path_conn_datas = temp
         else:

@@ -15,6 +15,10 @@ import numpy as np
 from datetime import datetime
 
 
+def centroid(lats, lons):
+    return sum(lats)/len(lats), sum(lons)/len(lons)
+
+
 #helper function
 def get_lat_long(id, df_stops):
     return (df_stops.loc[id].latitude, df_stops.loc[id].longitude)
@@ -47,11 +51,20 @@ def visualize_itinerary(df_connections, df_stops,START_ID,END_ID):
         lat = lats,
         hoverinfo='none'
     ))
+
+    center_lat, center_lon = centroid(lats, lons)
+
     fig.update_traces(line=dict(color="Purple",width=3))
     fig.update_layout(
-    mapbox = {
-    'style': "open-street-map"},
-    showlegend = False
+        autosize=True,
+        mapbox = {
+            'style': "open-street-map",
+            'center': {
+                'lat':center_lat,
+                'lon':center_lon
+            }
+        },
+        showlegend = False,
     )
 
     return fig

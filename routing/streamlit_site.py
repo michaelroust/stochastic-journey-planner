@@ -24,8 +24,7 @@ mapbox_access_token = 'pk.eyJ1IjoibWljaGFlbHJvdXN0IiwiYSI6ImNsM2tpbXlxdTA2dnUzY3
 
 #---------------------------------------------------------------
 
-# df = df_stops
-df  = pd.read_csv("data/stops_15k_short.csv",index_col=[0])
+df = df_stops.reset_index()
 
 from PIL import Image
 image = Image.open('assets/la (1).jpeg')
@@ -36,10 +35,13 @@ st.write("### Stochastic Journey planner")
 col1, col2, col3= st.columns(3)
 sorted_names = sorted(df.stop_name.unique())
 
+
+SELECTION_ZURICH_HB_INDEX = 1140
 with col1:
     dep_station = st.selectbox(
-     'Search for a departing station',
-     sorted_names
+        'Search for a departing station',
+        sorted_names,
+        index=SELECTION_ZURICH_HB_INDEX
     )
 
 
@@ -81,11 +83,16 @@ END_ID = df[df.stop_name == arr_station].stop_id.iloc[0]
 #START_ID = 8576195
 START_ID = df[df.stop_name == dep_station].stop_id.iloc[0]
 
+col1_search, col2_search = st.columns([1,1])
+with col1_search:
+    run_search = st.button('Search for best route')
+with col2_search:
+    fast = st.checkbox('Fast search', value=True)
 
 
-if st.button('Search for best route'):
+if run_search:
     with st.spinner('Finding best routes..'):
-        for route_data in generate_routes_gen(START_ID, END_ID, END_TIME, DAY_OF_WEEK, verbose=True,min_confidence=prob_connection):
+        for route_data in generate_routes_gen(START_ID, END_ID, END_TIME, DAY_OF_WEEK, fast=fast, verbose=True,min_confidence=prob_connection):
             df_2 = print_directions(route_data,df[df.stop_id == END_ID].stop_name.iloc[0])
             st.write(df_2)
 
