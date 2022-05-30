@@ -213,8 +213,12 @@ def walk_edge_list(df_stops, arr_stop_id, arr_pos:tuple):
 
 def walk_all_edge_list(df_stops) -> pd.DataFrame:
     temp = []
+    total_stops = df_stops.shape[0]
+    i = 0
     for index, row in df_stops.iterrows():
         temp.append(walk_edge_list(df_stops, index, (row['latitude'], row['longitude'])))
+        print(f'Processed stops: {i}/{total_stops}')
+        i += 1
 
     return pd.concat(temp,ignore_index=True)
 
