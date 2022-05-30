@@ -1,9 +1,7 @@
 import pandas as pd
-import pickle
 pd.set_option("display.max_rows",40)
 # pd.set_option("display.max_columns", 10)
 import matplotlib.pyplot as plt
-import networkx as nx
 
 from utils import *
 from algo import *
@@ -50,11 +48,12 @@ def visualize_itinerary(df_connections, df_stops,START_ID,END_ID):
         lat = lats,
         hoverinfo='none'
     ))
+    fig.update_traces(line=dict(color="Purple",width=3))
     fig.update_layout(
     mapbox = {
     'style': "open-street-map"},
     showlegend = False
-    ) 
+    )
 
     return fig
 
@@ -91,9 +90,11 @@ def print_directions(result_from_algo, end_stop_name):
             dep_sec = datetime(2019, 1, 1, int(dep_sec.h), int(dep_sec.m), int(dep_sec.s)).strftime('%H:%M')
             arr_sec = datetime(2019, 1, 1, int(arr_sec.h), int(arr_sec.m), int(arr_sec.s)).strftime('%H:%M')
         else:
+            walk_minutes = Time.from_seconds(result.iloc[row]['weight']).m
+
             result.iloc[row]['dep_stop_name'] = ""
             result.iloc[row]['arr_stop_name'] = ""
-            result.iloc[row]['transport_name'] = "walk"
+            result.iloc[row]['transport_name'] = f"{walk_minutes} minute walk"
             try:
                 result.iloc[row]['trip_headsign'] = result.iloc[row + 1]['dep_stop_name']
             except IndexError:

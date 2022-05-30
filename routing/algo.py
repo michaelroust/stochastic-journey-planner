@@ -222,7 +222,7 @@ def probabilistic_constrained_dijkstra(df_conns, start_id, end_id, end_time, min
     return build_route(prev_trip_id, prev, distances, probas, conn_datas, start_id, end_id)
 
 
-def probabilistic_constrained_dijkstra_multigraph(df_conns, start_id, end_id, end_time, min_confidence=0.8, verbose=False):
+def probabilistic_constrained_dijkstra_multigraph(df_conns, start_id, end_id, end_time, min_confidence=0.8, fast=True, verbose=False):
 
     # Initialize parameter and output collections
     distances = {}      # stores travel_times
@@ -251,8 +251,8 @@ def probabilistic_constrained_dijkstra_multigraph(df_conns, start_id, end_id, en
         _, (curr_id, curr_time) = queue.get()
 
         # Break if we have reached the start.
-        # if curr_id == start_id:
-        #     break
+        if fast and curr_id == start_id:
+            break
 
         # Update visited nodes.
         # visited.add(curr_id)
