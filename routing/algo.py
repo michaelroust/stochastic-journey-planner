@@ -338,6 +338,50 @@ def generate_routes(start_id, end_id, end_time:int, day_of_week:int, min_confide
     return routes_datas
 
 
+def generate_routes_gen(start_id, end_id, end_time:int, day_of_week:int, min_confidence=0.8, nroutes=3, max_iter=10, verbose=False):
+    """Build N routes that go from A to B and arrive by tgt_arrival_time_s with tgt_confidence%.
+
+    :param int day_of_week: int value between 1 and 7. (1=Monday, 2=Tuesday...)"""
+
+    routes_datas = []
+
+    df_conns_dynamic = df_conns[df_conns['dayofweek'] == day_of_week].drop('dayofweek', axis=1).copy()
+    # removed_edges = set()
+
+    print("Starting routing")
+    i = 0
+    while i < max_iter and len(routes_datas) < nroutes:
+
+        # temp = probabilistic_constrained_dijkstra(df_conns_dynamic, start_id, end_id, end_time, min_confidence)
+        temp = probabilistic_constrained_dijkstra_multigraph(df_conns_dynamic, start_id, end_id, end_time, min_confidence)
+        if temp != None:
+            path, cum_proba, path_conn_datas = temp
+        else:
+            if verbose: print("NO MORE ROUTES FOUND")
+            break
+
+        if cum_proba > min_confidence:
+            routes_datas.append(path_conn_datas)
+            # yield path_conn_datas
+
+        # Drop connection with lowest probability of making it
+        path_conn_datas_transport = path_conn_datas[path_conn_datas['trip_id'] != 'walk']
+        lowest_proba_conn = path_conn_datas_transport.sort_values(by='proba', axis=0).index[0]
+        df_conns_dynamic.drop(lowest_proba_conn, inplace=True)
+
+        i += 1
+        if verbose:
+            print(f"Iteration: {i} - Found routes: {len(routes_datas)}")
+            print(f"Probability: {cum_proba}")
+            print(f"Route cost: {path[0][2]}")
+            display(path_conn_datas)
+            print('---------------------------------------------')
+            # sys.stdout.flush()
+
+        if cum_proba > min_confidence:
+            yield path_conn_datas
+
+
 ###########################################################################
 # Copy of generate routes to consider the modification w.r.t Yen's algorithm
 
