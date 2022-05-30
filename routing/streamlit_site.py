@@ -92,7 +92,7 @@ START_ID = df[df.stop_name == dep_station].stop_id.iloc[0]
 
 if st.button('Search for best route'):
     with st.spinner('Finding best routes..'):
-        routes_data = generate_routes(START_ID, END_ID, END_TIME, DAY_OF_WEEK, verbose=True,min_confidence=prob_connection)
+        routes_data = generate_routes_gen(START_ID, END_ID, END_TIME, DAY_OF_WEEK, verbose=True,min_confidence=prob_connection)
         for route_data in routes_data:
             df_2 = print_directions(route_data,df[df.stop_id == END_ID].stop_name.iloc[0])
             st.write(df_2)
