@@ -10,4 +10,4 @@ plotly==5.3.1
 scipy==1.7.1
 setuptools==57.1.0
 streamlit==1.9.2
-pyhive[hive]
+
