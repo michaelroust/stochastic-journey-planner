@@ -100,7 +100,7 @@ def print_directions(result_from_algo, end_stop_name):
                 result.iloc[row]['trip_headsign'] = end_stop_name
             result.iloc[row]['route_short_name'] = ""
         result.iloc[row]['transport_name'] = "Train" if result.iloc[row]['transport_name'] == 'zug' else result.iloc[row]['transport_name'].capitalize()
-        result.iloc[row]['transport_name'] = f"{result.iloc[row]['transport_name']} {result.iloc[row]['route_short_name']} towards {result.iloc[row]['trip_headsign']}"
+        result.iloc[row]['transport_name'] = f"{result.iloc[row]['transport_name']} {result.iloc[row]['route_short_name']} to {result.iloc[row]['trip_headsign']}"
         rows += [[
             result.iloc[row]['transport_name'],
             result.iloc[row]['dep_stop_name'],

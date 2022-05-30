@@ -7,29 +7,22 @@ pd.set_option("display.max_rows",40)
 import matplotlib.pyplot as plt
 import networkx as nx
 
-from utils import *
-
-PATH_STOPS_15K = 'data/stops_15k_short.csv'
-
-# PATH_CONNECTIONS = '../data/connections_8_10.csv'
-# PATH_CONNECTIONS = '../data/connections3.csv'
-PATH_CONNECTIONS = 'data/full_timetable.csv'
-
-PATH_WALK_EDGES_15K = 'data/walks_15k.csv'
-
-from algo import *
-from visualization import *
-
 import plotly.express as px
 import plotly.graph_objects as go
 
 from scipy.stats import norm
 import numpy as np
-
-
 from datetime import datetime
 
+#---------------------------------------------------------------
+
+from utils import *
+from algo import *
+from visualization import *
+
 mapbox_access_token = 'pk.eyJ1IjoibWljaGFlbHJvdXN0IiwiYSI6ImNsM2tpbXlxdTA2dnUzY3AzdnZndWF2MGIifQ.eAlbvCcax9TMLeOyel2PdA'
+
+#---------------------------------------------------------------
 
 # df = df_stops
 df  = pd.read_csv("data/stops_15k_short.csv",index_col=[0])
@@ -92,8 +85,7 @@ START_ID = df[df.stop_name == dep_station].stop_id.iloc[0]
 
 if st.button('Search for best route'):
     with st.spinner('Finding best routes..'):
-        routes_data = generate_routes_gen(START_ID, END_ID, END_TIME, DAY_OF_WEEK, verbose=True,min_confidence=prob_connection)
-        for route_data in routes_data:
+        for route_data in generate_routes_gen(START_ID, END_ID, END_TIME, DAY_OF_WEEK, verbose=True,min_confidence=prob_connection):
             df_2 = print_directions(route_data,df[df.stop_id == END_ID].stop_name.iloc[0])
             st.write(df_2)
 

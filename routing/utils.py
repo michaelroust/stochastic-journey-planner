@@ -3,6 +3,10 @@ from os import stat
 import pandas as pd
 from fuzzywuzzy import fuzz
 
+import bz2
+# import pickle
+import _pickle as cPickle
+
 from geopy import distance
 
 #===============================================================
@@ -12,12 +16,13 @@ from geopy import distance
 # Paths
 
 PATH_STOPS_15K = '../data/stops_15k_short.csv'
+PATH_STOPS_15K_PBZ2 = '../data/stops_15k_short.pbz2'
 
-# PATH_CONNECTIONS = '../data/connections_8_10.csv'
-# PATH_CONNECTIONS = '../data/connections3.csv'
 PATH_CONNECTIONS = '../data/full_timetable.csv'
+PATH_CONNECTIONS_PBZ2 = '../data/full_timetable.pbz2'
 
 PATH_WALK_EDGES_15K = '../data/walks_15k.csv'
+PATH_WALK_EDGES_15K_PBZ2 = '../data/walks_15k.pbz2'
 
 #---------------------------------------------------------------
 # Numerical
@@ -106,6 +111,21 @@ def fuzzy_search_stops(df_stops, search_str):
 
 
 #---------------------------------------------------------------
+# Compression
+
+
+# Pickle a file and then compress it into a file with extension
+def compressed_pickle(path, data):
+    with bz2.BZ2File(path, 'wb') as f:
+        return cPickle.dump(data, f)
+
+# Load any compressed pickle file
+def decompress_pickle(path):
+    with bz2.BZ2File(path, 'rb') as f:
+        return cPickle.load(f)
+
+
+#---------------------------------------------------------------
 # Data loading
 
 # TODO Methods may need modifications as data evolves.
@@ -141,6 +161,16 @@ def load_df_connections():
     df_connections.drop_duplicates(['dep_stop_id', 'arr_stop_id', 'dep_time_s', 'arr_time_s', 'dayofweek', 'transport_name'], inplace=True)
 
     return df_connections
+
+
+# def load_df_stops_compressed(path):
+#     return decompress_pickle(path)
+
+# def load_df_walks_compressed():
+#     return decompress_pickle(PATH_WALK_EDGES_15K_PBZ2)
+
+# def load_df_connections_compressed():
+#     return decompress_pickle(PATH_CONNECTIONS_PBZ2)
 
 
 #---------------------------------------------------------------
