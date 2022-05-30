@@ -3,7 +3,7 @@ from IPython.display import display
 from queue import PriorityQueue
 from math import inf
 from utils import *
-from scipy.stats import norm
+from scipy.stats import norm, gamma
 
 #===============================================================
 
@@ -102,7 +102,13 @@ def neighbors(df_conns, dest_stop_id, end_time_s, prev_trip_id, keep_n_cheapest=
             if std_arr_time == 0.0:
                 std_arr_time = 0.01
 
-            proba = norm.cdf(end_time_s, loc=mean_arr_time, scale=std_arr_time)
+            # Normal distribution
+            # proba = norm.cdf(end_time_s, loc=mean_arr_time, scale=std_arr_time)
+
+            # Gamma distribution
+            shape = (mean_arr_time/std_arr_time)**2
+            scale = (std_arr_time**2)/mean_arr_time
+            proba = gamma.cdf(end_time_s, a=shape, scale=scale)
 
         conn['proba'] = proba
         yield conn['trip_id'], conn['dep_stop_id'], dep_time_s, proba, conn

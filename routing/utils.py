@@ -11,15 +11,13 @@ from geopy import distance
 #---------------------------------------------------------------
 # Paths
 
-PATH_STOPS_15K = '../data/stops_15k.csv'
+PATH_STOPS_15K = '../data/stops_15k_short.csv'
 
 # PATH_CONNECTIONS = '../data/connections_8_10.csv'
 # PATH_CONNECTIONS = '../data/connections3.csv'
 PATH_CONNECTIONS = '../data/full_timetable.csv'
 
 PATH_WALK_EDGES_15K = '../data/walks_15k.csv'
-
-PATH_STOPS_WALK_TIME_15K = '../data/stops_walk_time_15k.csv'
 
 #---------------------------------------------------------------
 # Numerical
@@ -115,13 +113,14 @@ def fuzzy_search_stops(df_stops, search_str):
 def load_df_stops():
     df_stops = pd.read_csv(PATH_STOPS_15K)
     df_stops.drop('Unnamed: 0',axis=1,inplace=True)
+    df_stops.drop_duplicates('stop_id', inplace=True)
     df_stops.set_index('stop_id',inplace=True)
     return df_stops
 
-def load_df_stops_walk_time():
-    df_stops_walk_time = pd.read_csv(PATH_STOPS_WALK_TIME_15K)
-    df_stops_walk_time.set_index('stop_id',inplace=True)
-    return df_stops_walk_time
+# def load_df_stops_walk_time():
+#     df_stops_walk_time = pd.read_csv(PATH_STOPS_WALK_TIME_15K)
+#     df_stops_walk_time.set_index('stop_id',inplace=True)
+#     return df_stops_walk_time
 
 def load_df_walks():
     df_walks = pd.read_csv(PATH_WALK_EDGES_15K)
@@ -139,8 +138,7 @@ def load_df_connections():
     df_connections['dep_time_s'] = df_connections['dep_time'].map(reformat_time)
     df_connections['arr_time_s'] = df_connections['arr_time'].map(reformat_time)
     df_connections.drop(['dep_time', 'arr_time'],axis=1,inplace=True)
-
-    # df_connections['std'] = 66
+    df_connections.drop_duplicates(['dep_stop_id', 'arr_stop_id', 'dep_time_s', 'arr_time_s', 'dayofweek', 'transport_name'], inplace=True)
 
     return df_connections
 
@@ -213,7 +211,7 @@ def walk_edge_list(df_stops, arr_stop_id, arr_pos:tuple):
     return df_walk
 
 
-def walk_all_edge_list(df_stops):
+def walk_all_edge_list(df_stops) -> pd.DataFrame:
     temp = []
     for index, row in df_stops.iterrows():
         temp.append(walk_edge_list(df_stops, index, (row['latitude'], row['longitude'])))
