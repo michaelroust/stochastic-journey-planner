@@ -25,7 +25,7 @@
 
 ## How To Run The Planner
 
-User friendly and interactive web interface on our [website].(https://share.streamlit.io/michaelroust/stochastic-journey-planner/website/routing/streamlit_site.py)
+User friendly and interactive web interface on our [website](https://share.streamlit.io/michaelroust/stochastic-journey-planner/website/routing/streamlit_site.py).
 
 Or if you want a deeper look at the code and its functioning follow the steps below:
 
