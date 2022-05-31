@@ -1,4 +1,4 @@
-# Final assignment: Zurich Robust Journey Planner
+# Final assignment: Zurich Stochastic Journey Planner
 
 **Executive summary:** build a robust SBB journey planner for the Zürich area.
 
@@ -80,7 +80,7 @@ Djikstra's algorithm only outputs the shortest path between two specified nodes.
 
 ## Video Presentation
 
-The video presentation of our project can be find [here](https://drive.google.com/file/d/1xIYxu9G0Q-0GZ-EvgBcIhXKECpdgqCve/view?usp=sharing) (google drive).
+The video presentation of our project can be found [here](https://drive.google.com/file/d/1xIYxu9G0Q-0GZ-EvgBcIhXKECpdgqCve/view?usp=sharing) (google drive).
 
 [top](#Content)
 
