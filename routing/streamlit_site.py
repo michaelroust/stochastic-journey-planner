@@ -19,6 +19,11 @@ st._LOGGER.info('Path' + os.getcwd())
 #---------------------------------------------------------------
 
 from utils import *
+
+PATH_STOPS_15K_PBZ2 = 'data/stops_15k_short.pbz2'
+PATH_CONNECTIONS_PBZ2 = 'data/full_timetable.pbz2'
+PATH_WALK_EDGES_15K_PBZ2 = 'data/walks_15k.pbz2'
+
 from algo import *
 from visualization import *
 
