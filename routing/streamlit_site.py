@@ -41,7 +41,7 @@ mapbox_access_token = 'pk.eyJ1IjoibWljaGFlbHJvdXN0IiwiYSI6ImNsM2tpbXlxdTA2dnUzY3
 
 #---------------------------------------------------------------
 
-st.set_page_config(page_title='Stochastic journey Planner', page_icon='🚂', layout="wide")
+st.set_page_config(page_title='Stochastic Journey Planner', page_icon='🚂', layout="wide")
 
 df = df_stops.reset_index()
 
@@ -52,7 +52,7 @@ df = df_stops.reset_index()
 #     st.image(Image.open('assets/graph.jpeg'))
 
 
-st.write("## Stochastic journey planner")
+st.write("## Stochastic Journey Planner")
 
 col1, col2, col3= st.columns(3)
 sorted_names = sorted(df.stop_name.unique())
