@@ -1,4 +1,5 @@
 
+from re import A
 from IPython.display import display
 from queue import PriorityQueue
 from math import inf
@@ -14,9 +15,12 @@ STOPS_RADIUS = 15000
 #===============================================================
 # Setup
 
-df_stops = filter_stops_by_distance_from_zurich_hb(decompress_pickle(PATH_STOPS_15K_PBZ2), STOPS_RADIUS)
-df_walks = filter_connections_by_stops(decompress_pickle(PATH_WALK_EDGES_15K_PBZ2), df_stops)
-df_conns = filter_connections_by_stops(decompress_pickle(PATH_CONNECTIONS_PBZ2), df_stops)
+if df_stops is None:
+    df_stops = filter_stops_by_distance_from_zurich_hb(decompress_pickle(PATH_STOPS_15K_PBZ2), STOPS_RADIUS)
+if df_walks is None:
+    df_walks = filter_connections_by_stops(decompress_pickle(PATH_WALK_EDGES_15K_PBZ2), df_stops)
+if df_conns is None:
+    df_conns = filter_connections_by_stops(decompress_pickle(PATH_CONNECTIONS_PBZ2), df_stops)
 
 #===============================================================
 
