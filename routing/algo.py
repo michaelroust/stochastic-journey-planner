@@ -15,18 +15,31 @@ STOPS_RADIUS = 15000
 #===============================================================
 # Setup
 
-if df_stops is None:
-    df_stops = filter_stops_by_distance_from_zurich_hb(decompress_pickle(PATH_STOPS_15K_PBZ2), STOPS_RADIUS)
-if df_walks is None:
-    df_walks = filter_connections_by_stops(decompress_pickle(PATH_WALK_EDGES_15K_PBZ2), df_stops)
-if df_conns is None:
-    df_conns = filter_connections_by_stops(decompress_pickle(PATH_CONNECTIONS_PBZ2), df_stops)
+# df_stops = None
+# df_walks = None
+# df_conns = None
+
+# def algo_setup_dfs(df_s, df_w, df_c):
+#     global df_stops
+#     df_stops = df_s
+#     global df_walks
+#     df_walks = df_w
+#     global df_conns
+#     df_conns = df_c
+
+# if df_stops is None:
+#     df_stops = filter_stops_by_distance_from_zurich_hb(decompress_pickle(PATH_STOPS_15K_PBZ2), STOPS_RADIUS)
+# if df_walks is None:
+#     df_walks = filter_connections_by_stops(decompress_pickle(PATH_WALK_EDGES_15K_PBZ2), df_stops)
+# if df_conns is None:
+#     df_conns = filter_connections_by_stops(decompress_pickle(PATH_CONNECTIONS_PBZ2), df_stops)
 
 #===============================================================
 
-
-def get_connections_walk(dest_stop_id):
+def get_connections_walk(dfs, dest_stop_id):
     """Get walking connections from precomputed data."""
+    (df_stops, df_walks, df_conns) = dfs
+
     return df_walks[df_walks['arr_stop_id'] == dest_stop_id].copy()
 
 
@@ -62,7 +75,8 @@ def get_connections_trans(df_conns, dest_stop_id, end_time_s, prev_trip_id, max_
     return df_edges
 
 
-def get_connections(df_conns, dest_stop_id, end_time_s, prev_trip_id, max_wait_time=MAX_WAIT_TIME, keep_n_cheapest=1):
+def get_connections(dfs, df_conns, dest_stop_id, end_time_s, prev_trip_id, max_wait_time=MAX_WAIT_TIME, keep_n_cheapest=1):
+
     df_conns_trans = get_connections_trans(df_conns, dest_stop_id, end_time_s, prev_trip_id, max_wait_time, keep_n_cheapest)
 
     if prev_trip_id == 'walk':
@@ -70,7 +84,7 @@ def get_connections(df_conns, dest_stop_id, end_time_s, prev_trip_id, max_wait_t
         return df_conns_trans
     else:
         # Get walk connections and walk trip_id.
-        df_conns_walk = get_connections_walk(dest_stop_id)
+        df_conns_walk = get_connections_walk(dfs, dest_stop_id)
         df_conns_walk['trip_id'] = 'walk'
 
         # Walk connections have no distribution
@@ -80,9 +94,10 @@ def get_connections(df_conns, dest_stop_id, end_time_s, prev_trip_id, max_wait_t
         return pd.concat([df_conns_trans, df_conns_walk], ignore_index=False)
 
 
-def neighbors(df_conns, dest_stop_id, end_time_s, prev_trip_id, keep_n_cheapest=1):
+def neighbors(dfs, df_conns, dest_stop_id, end_time_s, prev_trip_id, keep_n_cheapest=1):
     """Function to get valid neighbours for constrained dijkstra."""
-    df_conns = get_connections(df_conns, dest_stop_id, end_time_s, prev_trip_id, keep_n_cheapest=keep_n_cheapest)
+
+    df_conns = get_connections(dfs, df_conns, dest_stop_id, end_time_s, prev_trip_id, keep_n_cheapest=keep_n_cheapest)
 
     for _, conn in df_conns.iterrows():
 
@@ -156,7 +171,8 @@ def build_route(prev_trip_id, prev, distances, probas, conn_datas, start_id, end
 
 
 
-def probabilistic_constrained_dijkstra(df_conns, start_id, end_id, end_time, min_confidence=0.8, verbose=False):
+def probabilistic_constrained_dijkstra(dfs, df_conns, start_id, end_id, end_time, min_confidence=0.8, verbose=False):
+    (df_stops, _, _) = dfs
 
     # Initialize parameter and output collections
     distances = {}      # stores travel_times
@@ -196,7 +212,7 @@ def probabilistic_constrained_dijkstra(df_conns, start_id, end_id, end_time, min
         cum_proba = cum_probas[curr_id]
 
         # Loop to traverse edges connecting all valid neighbours.
-        for trip_id, neighbor_id, neighbor_dep_time_s, proba, conn_data in neighbors(df_conns, curr_id, curr_time, prev_trip_id[curr_id]):
+        for trip_id, neighbor_id, neighbor_dep_time_s, proba, conn_data in neighbors(dfs, df_conns, curr_id, curr_time, prev_trip_id[curr_id]):
 
             # Distance calculation that works for both walking and transportation times.
             new_dist = end_time - neighbor_dep_time_s
@@ -225,8 +241,7 @@ def probabilistic_constrained_dijkstra(df_conns, start_id, end_id, end_time, min
     return build_route(prev_trip_id, prev, distances, probas, conn_datas, start_id, end_id)
 
 
-def probabilistic_constrained_dijkstra_multigraph(df_conns, start_id, end_id, end_time, min_confidence=0.8, fast=True, verbose=False):
-
+def probabilistic_constrained_dijkstra_multigraph(dfs, df_conns, start_id, end_id, end_time, min_confidence=0.8, fast=True, verbose=False):
     # Initialize parameter and output collections
     distances = {}      # stores travel_times
     prev = {}           # stores predecessor
@@ -265,7 +280,7 @@ def probabilistic_constrained_dijkstra_multigraph(df_conns, start_id, end_id, en
         cum_proba = cum_probas[curr_id]
 
         # Loop to traverse edges connecting all valid neighbours.
-        for trip_id, neighbor_id, neighbor_dep_time_s, proba, conn_data in neighbors(df_conns, curr_id, curr_time, prev_trip_id[curr_id], 3):
+        for trip_id, neighbor_id, neighbor_dep_time_s, proba, conn_data in neighbors(dfs, df_conns, curr_id, curr_time, prev_trip_id[curr_id], 3):
 
             # Distance calculation that works for both walking and transportation times.
             new_dist = end_time - neighbor_dep_time_s
@@ -298,10 +313,12 @@ def probabilistic_constrained_dijkstra_multigraph(df_conns, start_id, end_id, en
 
 #===============================================================
 
-def generate_routes(start_id, end_id, end_time:int, day_of_week:int, min_confidence=0.8, nroutes=3, max_iter=10, verbose=False):
+def generate_routes(dfs, start_id, end_id, end_time:int, day_of_week:int, min_confidence=0.8, nroutes=3, max_iter=10, verbose=False):
     """Build N routes that go from A to B and arrive by tgt_arrival_time_s with tgt_confidence%.
 
     :param int day_of_week: int value between 1 and 7. (1=Monday, 2=Tuesday...)"""
+
+    (_, _, df_conns) = dfs
 
     routes_datas = []
 
@@ -313,7 +330,7 @@ def generate_routes(start_id, end_id, end_time:int, day_of_week:int, min_confide
     while i < max_iter and len(routes_datas) < nroutes:
 
         # temp = probabilistic_constrained_dijkstra(df_conns_dynamic, start_id, end_id, end_time, min_confidence)
-        temp = probabilistic_constrained_dijkstra_multigraph(df_conns_dynamic, start_id, end_id, end_time, min_confidence)
+        temp = probabilistic_constrained_dijkstra_multigraph(dfs, df_conns_dynamic, start_id, end_id, end_time, min_confidence)
         if temp != None:
             path, cum_proba, path_conn_datas = temp
         else:
@@ -341,10 +358,12 @@ def generate_routes(start_id, end_id, end_time:int, day_of_week:int, min_confide
     return routes_datas
 
 
-def generate_routes_gen(start_id, end_id, end_time:int, day_of_week:int, min_confidence=0.8, nroutes=3, max_iter=10, fast=True, verbose=False):
+def generate_routes_gen(dfs, start_id, end_id, end_time:int, day_of_week:int, min_confidence=0.8, nroutes=3, max_iter=10, fast=True, verbose=False, verbose_display=False):
     """Build N routes that go from A to B and arrive by tgt_arrival_time_s with tgt_confidence%.
 
     :param int day_of_week: int value between 1 and 7. (1=Monday, 2=Tuesday...)"""
+
+    (_, _, df_conns) = dfs
 
     routes_datas = []
 
@@ -356,7 +375,7 @@ def generate_routes_gen(start_id, end_id, end_time:int, day_of_week:int, min_con
     while i < max_iter and len(routes_datas) < nroutes:
 
         # temp = probabilistic_constrained_dijkstra(df_conns_dynamic, start_id, end_id, end_time, min_confidence)
-        temp = probabilistic_constrained_dijkstra_multigraph(df_conns_dynamic, start_id, end_id, end_time, min_confidence, fast=fast)
+        temp = probabilistic_constrained_dijkstra_multigraph(dfs, df_conns_dynamic, start_id, end_id, end_time, min_confidence, fast=fast)
         if temp != None:
             path, cum_proba, path_conn_datas = temp
         else:
@@ -372,26 +391,31 @@ def generate_routes_gen(start_id, end_id, end_time:int, day_of_week:int, min_con
         lowest_proba_conn = path_conn_datas_transport.sort_values(by='proba', axis=0).index[0]
         df_conns_dynamic.drop(lowest_proba_conn, inplace=True)
 
+        route_cost = path[0][2]
+
         i += 1
         if verbose:
             print(f"Iteration: {i} - Found routes: {len(routes_datas)}")
             print(f"Probability: {cum_proba}")
-            print(f"Route cost: {path[0][2]}")
-            display(path_conn_datas)
+            print(f"Route cost: {route_cost}")
+            if verbose_display:
+                display(path_conn_datas)
             print('---------------------------------------------')
             # sys.stdout.flush()
 
         if cum_proba > min_confidence:
-            yield path_conn_datas
+            yield route_cost, cum_proba, path_conn_datas
 
 
 ###########################################################################
 # Copy of generate routes to consider the modification w.r.t Yen's algorithm
 
-def generate_routes_yen(start_id, end_id, end_time:int, day_of_week:int, min_confidence=0.8, nroutes=5, max_iter=10, verbose=False):
+def generate_routes_yen(dfs, start_id, end_id, end_time:int, day_of_week:int, min_confidence=0.8, nroutes=5, max_iter=10, verbose=False):
     """Build N routes that go from A to B and arrive by tgt_arrival_time_s with tgt_confidence%.
 
     :param int day_of_week: int value between 1 and 7. (1=Monday, 2=Tuesday...)"""
+
+    (_, _, df_conns) = dfs
 
     routes_datas = []
     nb_routes_found = 0
