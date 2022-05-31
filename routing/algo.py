@@ -2,8 +2,10 @@
 from IPython.display import display
 from queue import PriorityQueue
 from math import inf
-from utils import *
 from scipy.stats import norm, gamma
+
+from utils import *
+from visualization import *
 
 #===============================================================
 
@@ -161,7 +163,7 @@ def probabilistic_constrained_dijkstra(df_conns, start_id, end_id, end_time, min
     prev_trip_id = {}   # stores prev_trip_id
     probas = {}
     cum_probas = {}
-    conn_datas = {}     # TODO we can replace this with only needed data
+    conn_datas = {}
 
     visited = set()     # stores already visited stop_ids
     queue = PriorityQueue()
@@ -230,7 +232,7 @@ def probabilistic_constrained_dijkstra_multigraph(df_conns, start_id, end_id, en
     prev_trip_id = {}   # stores prev_trip_id
     probas = {}
     cum_probas = {}
-    conn_datas = {}     # TODO we can replace this with only needed data
+    conn_datas = {}
 
     # visited = set()     # stores already visited stop_ids
     queue = PriorityQueue()
@@ -330,7 +332,8 @@ def generate_routes(start_id, end_id, end_time:int, day_of_week:int, min_confide
             print(f"Iteration: {i} - Found routes: {len(routes_datas)}")
             print(f"Probability: {cum_proba}")
             print(f"Route cost: {path[0][2]}")
-            display(path_conn_datas)
+            # display(path_conn_datas)
+            display(print_directions(path_conn_datas))
             print('---------------------------------------------')
             # sys.stdout.flush()
 
@@ -374,7 +377,8 @@ def generate_routes_gen(start_id, end_id, end_time:int, day_of_week:int, min_con
             print(f"Iteration: {i} - Found routes: {len(routes_datas)}")
             print(f"Probability: {cum_proba}")
             print(f"Route cost: {path[0][2]}")
-            display(path_conn_datas)
+            # display(path_conn_datas)
+            display(print_directions(path_conn_datas))
             print('---------------------------------------------')
             # sys.stdout.flush()
 
