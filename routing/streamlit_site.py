@@ -27,9 +27,9 @@ from visualization import *
 
 STOPS_RADIUS = 15000
 
-PATH_STOPS_15K_PBZ2 = 'data/stops_15k_short.pbz2'
-PATH_CONNECTIONS_PBZ2 = 'data/full_timetable.pbz2'
-PATH_WALK_EDGES_15K_PBZ2 = 'data/walks_15k.pbz2'
+PATH_STOPS_15K_PBZ2 = '../data/stops_15k_short.pbz2'
+PATH_CONNECTIONS_PBZ2 = '../data/full_timetable.pbz2'
+PATH_WALK_EDGES_15K_PBZ2 = '../data/walks_15k.pbz2'
 
 @st.experimental_singleton()
 def load_dfs():
@@ -47,7 +47,7 @@ st.set_page_config(page_title='Stochastic Journey Planner', page_icon='🚂', la
 #---------------------------------------------------------------
 st.write("## Stochastic Journey Planner")
 
-(df_stops,_,_) = load_dfs()
+dfs = load_dfs()
 
 # col1, _, col2 = st.columns([4, 1, 2])
 # with col1:
@@ -58,6 +58,7 @@ st.write("## Stochastic Journey Planner")
 
 form = st.form(key="route_search")
 with form:
+    df_stops = dfs[0]
     df = df_stops.reset_index()
     col1, col2, col3= st.columns(3)
     sorted_names = sorted(df.stop_name.unique())
@@ -114,7 +115,6 @@ with form:
 
 if run_search:
     with st.spinner('Finding best routes..'):
-        dfs = load_dfs()
         for total_cost, cum_proba, route_data in generate_routes_gen(dfs, START_ID, END_ID, END_TIME, DAY_OF_WEEK, fast=fast, verbose=True,min_confidence=prob_connection):
 
             tot_time = Time.from_seconds(total_cost)
