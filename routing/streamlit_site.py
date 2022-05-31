@@ -12,6 +12,10 @@ import plotly.graph_objects as go
 import numpy as np
 from datetime import datetime
 
+
+import os
+st._LOGGER.info('Path' + os.getcwd())
+
 #---------------------------------------------------------------
 
 from utils import *
