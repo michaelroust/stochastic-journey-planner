@@ -45,11 +45,11 @@ st.set_page_config(page_title='Stochastic journey Planner', page_icon='🚂', la
 
 df = df_stops.reset_index()
 
-col1, _, col2 = st.columns([4, 1, 2])
-with col1:
-    st.image(Image.open('assets/sbb_logo.png'))
-with col2:
-    st.image(Image.open('assets/graph.jpeg'))
+# col1, _, col2 = st.columns([4, 1, 2])
+# with col1:
+#     st.image(Image.open('assets/sbb_logo.png'))
+# with col2:
+#     st.image(Image.open('assets/graph.jpeg'))
 
 
 st.write("## Stochastic journey planner")
