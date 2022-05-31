@@ -27,23 +27,27 @@ from visualization import *
 
 STOPS_RADIUS = 15000
 
-PATH_STOPS_15K_PBZ2 = 'data/stops_15k_short.pbz2'
-PATH_CONNECTIONS_PBZ2 = 'data/full_timetable.pbz2'
-PATH_WALK_EDGES_15K_PBZ2 = 'data/walks_15k.pbz2'
+PATH_STOPS_15K_PBZ2 = '../data/stops_15k_short.pbz2'
+PATH_CONNECTIONS_PBZ2 = '../data/full_timetable.pbz2'
+PATH_WALK_EDGES_15K_PBZ2 = '../data/walks_15k.pbz2'
 
-df_stops = filter_stops_by_distance_from_zurich_hb(decompress_pickle(PATH_STOPS_15K_PBZ2), STOPS_RADIUS)
-df_walks = filter_connections_by_stops(decompress_pickle(PATH_WALK_EDGES_15K_PBZ2), df_stops)
-df_conns = filter_connections_by_stops(decompress_pickle(PATH_CONNECTIONS_PBZ2), df_stops)
-dfs = (df_stops, df_walks, df_conns)
+@st.experimental_singleton()
+def load_dfs():
+    df_stops = filter_stops_by_distance_from_zurich_hb(decompress_pickle(PATH_STOPS_15K_PBZ2), STOPS_RADIUS)
+    df_walks = filter_connections_by_stops(decompress_pickle(PATH_WALK_EDGES_15K_PBZ2), df_stops)
+    df_conns = filter_connections_by_stops(decompress_pickle(PATH_CONNECTIONS_PBZ2), df_stops)
+    dfs = (df_stops, df_walks, df_conns)
+    return dfs
 
 
 mapbox_access_token = 'pk.eyJ1IjoibWljaGFlbHJvdXN0IiwiYSI6ImNsM2tpbXlxdTA2dnUzY3AzdnZndWF2MGIifQ.eAlbvCcax9TMLeOyel2PdA'
-
-#---------------------------------------------------------------
-
 st.set_page_config(page_title='Stochastic Journey Planner', page_icon='🚂', layout="wide")
 
-df = df_stops.reset_index()
+
+#---------------------------------------------------------------
+st.write("## Stochastic Journey Planner")
+
+(df_stops,_,_) = load_dfs()
 
 # col1, _, col2 = st.columns([4, 1, 2])
 # with col1:
@@ -52,68 +56,65 @@ df = df_stops.reset_index()
 #     st.image(Image.open('assets/graph.jpeg'))
 
 
-st.write("## Stochastic Journey Planner")
+form = st.form(key="route_search")
+with form:
+    df = df_stops.reset_index()
+    col1, col2, col3= st.columns(3)
+    sorted_names = sorted(df.stop_name.unique())
 
-col1, col2, col3= st.columns(3)
-sorted_names = sorted(df.stop_name.unique())
 
-
-SELECTION_ZURICH_HB_INDEX = 1140
-with col1:
-    dep_station = st.selectbox(
+    SELECTION_ZURICH_HB_INDEX = 1140
+    with col1:
+        dep_station = st.selectbox(
         'Search for a departing station',
         sorted_names,
         index=SELECTION_ZURICH_HB_INDEX
-    )
+        )
 
 
-with col3:
-    arr_station = st.selectbox(
-     'Search for an arrival station',
-     sorted_names)
+    with col3:
+        arr_station = st.selectbox(
+        'Search for an arrival station',
+        sorted_names)
 
-st.markdown('From *%s* to *%s*' % (dep_station,arr_station))
+    st.markdown('From *%s* to *%s*' % (dep_station,arr_station))
 
-col1_hour, col2_min= st.columns(2)
-with col1_hour:
-    hour_user = st.number_input("Select hour", min_value=6, max_value=22, value=10)
-with col2_min:
-    min_user = st.number_input("Select minute", min_value=0, max_value=59, value=0)
-
-
-DAY_OF_WEEK = 1
-prob_connection = st.number_input("Select probability of getting connection", min_value=0.1, max_value=1.0, value=0.8)
-day_of_week_name = st.selectbox(
-     'Select a day in the week',
-     ["Monday","Tuesday","Wednesday","Thursday","Friday"]
-    )
-
-dic_of_days = {"Monday":1,"Tuesday":2,"Wednesday":3,"Thursday":4,"Friday":5}
-DAY_OF_WEEK = dic_of_days[day_of_week_name]
+    col1_hour, col2_min= st.columns(2)
+    with col1_hour:
+        hour_user = st.number_input("Select hour", min_value=6, max_value=22, value=10)
+    with col2_min:
+        min_user = st.number_input("Select minute", min_value=0, max_value=59, value=0)
 
 
+    DAY_OF_WEEK = 1
+    prob_connection = st.number_input("Select probability of getting connection", min_value=0.1, max_value=1.0, value=0.8)
+    day_of_week_name = st.selectbox(
+         'Select a day in the week',
+        ["Monday","Tuesday","Wednesday","Thursday","Friday"]
+        )
 
-#select time
-#select day (Monday-Sunday)
+    dic_of_days = {"Monday":1,"Tuesday":2,"Wednesday":3,"Thursday":4,"Friday":5}
+    DAY_OF_WEEK = dic_of_days[day_of_week_name]
 
 
-END_TIME = Time(h=hour_user,m=min_user).in_seconds()
+    END_TIME = Time(h=hour_user,m=min_user).in_seconds()
 
 
-END_ID = df[df.stop_name == arr_station].stop_id.iloc[0]
-#END_ID = 8503016
-#START_ID = 8576195
-START_ID = df[df.stop_name == dep_station].stop_id.iloc[0]
+    END_ID = df[df.stop_name == arr_station].stop_id.iloc[0]
+    #END_ID = 8503016
+    #START_ID = 8576195
+    START_ID = df[df.stop_name == dep_station].stop_id.iloc[0]
 
-col1_search, col2_search = st.columns([1,1])
-with col1_search:
-    run_search = st.button('Find optimal routes')
-with col2_search:
-    fast = st.checkbox('Fast search', value=True)
+    col1_search, col2_search = st.columns([1,1])
+    with col2_search:
+        fast = st.checkbox('Fast search', value=True)
+    with col1_search:
+        run_search = st.form_submit_button(label="Find optimal routes")
 
 
 if run_search:
     with st.spinner('Finding best routes..'):
+        dfs = load_dfs()
         for total_cost, cum_proba, route_data in generate_routes_gen(dfs, START_ID, END_ID, END_TIME, DAY_OF_WEEK, fast=fast, verbose=True,min_confidence=prob_connection):
 
             tot_time = Time.from_seconds(total_cost)
