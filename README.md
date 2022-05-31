@@ -1,12 +1,9 @@
 
-
-## [Stochastic-journey-planner](https://share.streamlit.io/michaelroust/stochastic-journey-planner/website/routing/streamlit_site.py)
-
----
-
 # Final assignment: Zurich Robust Journey Planner
 
 **Executive summary:** build a robust SBB journey planner for the Zürich area.
+
+### Website: [Stochastic-journey-planner](https://share.streamlit.io/michaelroust/stochastic-journey-planner/website/routing/streamlit_site.py)
 
 ----
 ## Content
@@ -28,7 +25,35 @@
 
 ## How To Run The Planner
 
-So how do we run our code ?
+User friendly and interactive web interface on our [website].(https://share.streamlit.io/michaelroust/stochastic-journey-planner/website/routing/streamlit_site.py)
+
+Or if you want a deeper look at the code and its functioning follow the steps below:
+
+#### Data preprocessing
+
+
+
+#### Route planner
+
+Just run the notebook [routing/algo.ipynb](routing/algo.ipynb). It contains the following code to run our algorithm.
+
+```python
+from utils import *
+from algo import *
+from visualization import *
+
+END_TIME = Time(h=10).in_seconds()      # Desired arrival time
+START_ID = ZURICH_WERD_ID              # Departure station_id
+
+END_ID = ZURICH_HB_ID                   # Destination station_id
+
+DAY_OF_WEEK = 1                         # Value 1-7. Monday=1, Tuesday=2,...
+MIN_CONFIDENCE = 0.8                    # Min required confidence/probability of making all the connections of journey
+N_ROUTES = 3                            # N best journey's to output
+
+# Probabilistic Yen's algorithm. verbose=True will output routes as they are found
+routes_data = generate_routes(START_ID, END_ID, END_TIME, DAY_OF_WEEK, MIN_CONFIDENCE, N_ROUTES, verbose=True)
+```
 
 [top](#Content)
 
@@ -174,7 +199,7 @@ We provide a summary description of the files below. The most relevant files are
 
     - `TRIP_ID`: identifier (FK) of the trip, unique for the day - e.g. _1.TA.1-100-j19-1.1.H_
     - `ARRIVAL_TIME`: scheduled (local) time of arrival at the stop (same as DEPARTURE_TIME if this is the start of the journey)
-    - `DEPARTURE_TIME`: scheduled (local) time of departure at the stop 
+    - `DEPARTURE_TIME`: scheduled (local) time of departure at the stop
     - `STOP_ID`: stop (station) identifier (FK), from stops.txt
     - `STOP_SEQUENCE`: sequence number of the stop on this trip id, starting at 1.
     - `PICKUP_TYPE`:
@@ -188,14 +213,14 @@ We provide a summary description of the files below. The most relevant files are
     - `TRIP_HEADSIGN`: displayed to passengers, most of the time this is the (short) name of the last stop.
     - `TRIP_SHORT_NAME`: internal identifier for the trip_headsign (note TRIP_HEADSIGN and TRIP_SHORT_NAME are only unique for an agency)
     - `DIRECTION_ID`: if the route is bidirectional, this field indicates the direction of the trip on the route.
-    
+
 * calendar.txt:
 
     - `SERVICE_ID`: identifier (PK) of a group of trips sharing a same calendar and calendar exception pattern.
     - `MONDAY`..`SUNDAY`: 0 or 1 for each day of the week, indicating occurence of the service on that day.
     - `START_DATE`: start date when weekly service id pattern is valid
     - `END_DATE`: end date after which weekly service id pattern is no longer valid
-    
+
 * routes.txt:
 
     - `ROUTE_ID`: identifier for the route (PK)
@@ -204,7 +229,7 @@ We provide a summary description of the files below. The most relevant files are
     - `ROUTE_LONG_NAME`: (empty)
     - `ROUTE_DESC`: _Bus_, _Zub_, _Tram_, etc.
     - `ROUTE_TYPE`:
-    
+
 **Note:** PK=Primary Key (unique), FK=Foreign Key (refers to a Primary Key in another table)
 
 The other files are:
@@ -217,12 +242,12 @@ Figure 1. better illustrates the above concepts relating stops, routes, trips an
 
 
  ![journeys](figs/journeys.png)
- 
+
  _Figure 1._ Relation between stops, routes, trips and stop times. The vertical axis represents the stops along the route in the direction of travel.
              The horizontal axis represents the time of day on a non-linear scale. Solid lines connecting the stops correspond to trips.
              A trip is one instances of a vehicle journey on the route. Trips on same route do not need
              to mark all the stops on the route, resulting in trips having different stop lists for the same route.
-             
+
 
 #### Stations data
 
