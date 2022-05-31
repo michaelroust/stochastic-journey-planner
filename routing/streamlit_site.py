@@ -27,9 +27,9 @@ from visualization import *
 
 STOPS_RADIUS = 15000
 
-PATH_STOPS_15K_PBZ2 = '../data/stops_15k_short.pbz2'
-PATH_CONNECTIONS_PBZ2 = '../data/full_timetable.pbz2'
-PATH_WALK_EDGES_15K_PBZ2 = '../data/walks_15k.pbz2'
+PATH_STOPS_15K_PBZ2 = 'data/stops_15k_short.pbz2'
+PATH_CONNECTIONS_PBZ2 = 'data/full_timetable.pbz2'
+PATH_WALK_EDGES_15K_PBZ2 = 'data/walks_15k.pbz2'
 
 @st.experimental_singleton()
 def load_dfs():
