@@ -1,4 +1,3 @@
-
 # Final assignment: Zurich Robust Journey Planner
 
 **Executive summary:** build a robust SBB journey planner for the Zürich area.
@@ -25,7 +24,7 @@
 
 ## How To Run The Planner
 
-User friendly and interactive web interface on our [website].(https://share.streamlit.io/michaelroust/stochastic-journey-planner/website/routing/streamlit_site.py)
+User friendly and interactive web interface on our [website](https://share.streamlit.io/michaelroust/stochastic-journey-planner/website/routing/streamlit_site.py).
 
 Or if you want a deeper look at the code and its functioning follow the steps below:
 
@@ -81,7 +80,7 @@ Djikstra's algorithm only outputs the shortest path between two specified nodes.
 
 ## Video Presentation
 
-The video presentation of our project can be find here [link].
+The video presentation of our project can be find [here](https://drive.google.com/file/d/1xIYxu9G0Q-0GZ-EvgBcIhXKECpdgqCve/view?usp=sharing) (google drive).
 
 [top](#Content)
 
